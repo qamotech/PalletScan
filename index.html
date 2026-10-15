@@ -22,6 +22,21 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
 body{padding-bottom:96px;}
 body.lg{font-size:19px;}
 body.lg .btn{min-height:64px;font-size:19px;}
+.btn.shutter{min-height:88px;font-size:22px;background:linear-gradient(135deg,#0e7490,#1d4ed8);border:1px solid #22d3ee;box-shadow:0 0 18px rgba(34,211,238,.35);}
+.btn.shutter:active{transform:scale(.97);box-shadow:0 0 26px rgba(34,211,238,.6);}
+.filmstrip{display:flex;gap:8px;overflow-x:auto;padding:10px 4px;margin-top:10px;-webkit-overflow-scrolling:touch;}
+.filmstrip img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid var(--line);flex:none;}
+.filmstrip img.proc{border-color:#22d3ee;box-shadow:0 0 10px rgba(34,211,238,.6);}
+.filmstrip img.done{border-color:#22c55e;opacity:.65;}
+.qcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;animation:tabIn .25s ease;}
+.qcard .qh{display:flex;gap:10px;align-items:center;margin-bottom:8px;}
+.qcard .qh img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex:none;}
+.qcard .fld{display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-bottom:1px dashed var(--line);}
+.qcard .fld b{color:var(--dim);font-weight:normal;flex:none;}
+.qcard .fld span{text-align:right;word-break:break-word;}
+.qcard .fld span.miss{color:#f59e0b;}
+.qcard .qbtns{display:flex;gap:8px;margin-top:10px;}
+.qcard .qbtns .btn{min-height:52px;font-size:16px;}
 body.lg .stepper button{width:76px;height:66px;}
 button{touch-action:manipulation;}
 header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0d1420,#0a0e14);
@@ -180,12 +195,13 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
   <div class="card">
     <h2>1 &mdash; Capture pallet label</h2>
     <div class="seg" id="scanModes">
-      <button data-m="barcode" class="on">Barcode</button>
-      <button data-m="photo">Photo + OCR</button>
+      <button data-m="photo" class="on">Photo + OCR</button>
       <button data-m="manual">Manual</button>
     </div>
 
-    <div id="mode-barcode">
+    <details class="card" id="barcodeFallback" style="margin-top:10px">
+      <summary class="f" style="cursor:pointer;font-size:16px;list-style:none">📷 Barcode scanner <span class="note" style="display:inline">— fallback</span></summary>
+      <div id="mode-barcode" style="margin-top:10px">
       <div id="cam-wrap"><div class="hint">Tap START SCANNER, point at the label barcode.<br>Works with QR, Code128, UPC/EAN, DataMatrix.</div></div>
       <div class="cam-tools">
         <button class="btn ghost sm" id="btnTorch" style="margin-top:8px">TORCH: OFF</button>
@@ -195,15 +211,23 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <button class="btn ghost hidden" id="btnStopScan">STOP SCANNER</button>
       <div class="toggle" id="rapidToggle"><span class="sw"></span><span>Rapid-scan mode: decoded barcodes auto-add as 1 pallet, no confirm screen. <b id="rapidCount"></b></span></div>
       <div class="note" style="margin-top:8px">Normal mode: decoded value drops into the Lot / Code field for confirmation.</div>
-    </div>
+      </div>
+    </details>
 
-    <div id="mode-photo" class="hidden">
+    <div id="mode-photo">
       <div id="cam-wrap2" style="position:relative;background:#000;border-radius:12px;overflow:hidden;border:1px solid var(--line);min-height:200px;display:flex;align-items:center;justify-content:center;">
         <div class="hint" id="photoHint">Take or pick a photo of the pallet label.<br>Text is read on-device, then you confirm every field.</div>
         <img id="photoPrev" class="hidden" style="width:100%;display:block;">
       </div>
       <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden">
-      <button class="btn" id="btnTakePhoto">TAKE / PICK LABEL PHOTO</button>
+      <button class="btn shutter" id="btnTakePhoto">📷 TAKE LABEL PHOTO</button>
+      <div class="toggle on" id="rapidPhotoToggle"><span class="sw"></span><span>Rapid capture: tap-tap-tap photos, then process as a batch. <b id="rapidPhotoCount"></b></span></div>
+      <div id="filmstrip" class="filmstrip hidden"></div>
+      <button class="btn ok hidden" id="btnProcessQueue" style="margin-top:10px">⚙ PROCESS QUEUE (<span id="queueN">0</span>)</button>
+      <button class="btn ok hidden" id="btnConfirmAll" style="margin-top:10px">✓ CONFIRM ALL</button>
+      <div class="prog hidden" id="queueProg"><i></i></div>
+      <div class="note" id="queueNote" style="margin-top:8px"></div>
+      <div id="queueResults"></div>
       <div class="row2">
         <button class="btn ok hidden" id="btnRunOcr" style="margin-top:10px">READ TEXT FROM PHOTO</button>
         <button class="btn ghost hidden" id="btnRetake" style="margin-top:10px">RETAKE</button>
@@ -472,10 +496,11 @@ $("btnNewSession").addEventListener("click",()=>{
 document.querySelectorAll("#scanModes button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("#scanModes button").forEach(x=>x.classList.remove("on"));
   b.classList.add("on");
-  ["barcode","photo","manual"].forEach(m=>$("mode-"+m).classList.toggle("hidden", m!==b.dataset.m));
-  if(b.dataset.m!=="barcode") stopScan();
+  ["photo","manual"].forEach(m=>$("mode-"+m).classList.toggle("hidden", m!==b.dataset.m));
+  stopScan();
 }));
 $("btnManualEntry").addEventListener("click",()=>openConfirm({}));
+$("barcodeFallback").addEventListener("toggle",e=>{ if(e.target.open) $("mode-barcode").classList.remove("hidden"); });
 
 /* ---- Barcode (html5-qrcode) ---- */
 let hq=null, scanning=false, facingMode="environment", torchOn=false, rapidMode=false, rapidCount=0;
@@ -540,9 +565,36 @@ $("btnRetake").addEventListener("click",()=>{ photoURL=null; $("photoInput").val
   $("photoPrev").classList.add("hidden"); $("photoHint").classList.remove("hidden");
   $("btnRunOcr").classList.add("hidden"); $("btnRetake").classList.add("hidden");
   $("ocrNote").textContent=""; });
+let photoQueue=[], rapidPhoto=true;
+$("rapidPhotoToggle").addEventListener("click",()=>{
+  rapidPhoto=!rapidPhoto;
+  $("rapidPhotoToggle").classList.toggle("on",rapidPhoto);
+  toast(rapidPhoto?"Rapid capture ON — tap-tap-tap":"Single-photo mode");
+});
+function renderFilmstrip(){
+  const fs=$("filmstrip"); fs.innerHTML="";
+  fs.classList.toggle("hidden", photoQueue.length===0);
+  photoQueue.forEach((q,i)=>{
+    const im=document.createElement("img"); im.src=q.url;
+    if(q.done) im.classList.add("done");
+    im.title="Tap to remove";
+    im.addEventListener("click",()=>{ photoQueue.splice(i,1); renderFilmstrip(); toast("Photo removed"); });
+    fs.appendChild(im);
+  });
+  $("queueN").textContent=photoQueue.length;
+  $("btnProcessQueue").classList.toggle("hidden", photoQueue.length===0);
+  const rc=$("rapidPhotoCount"); if(rc) rc.textContent=photoQueue.length?("("+photoQueue.length+" queued)"):("");
+}
 $("photoInput").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f) return;
-  photoURL=URL.createObjectURL(f);
+  const url=URL.createObjectURL(f);
+  if(rapidPhoto){
+    photoQueue.push({url:url, done:false, parsed:null, saved:false});
+    renderFilmstrip(); buzz(60); beep(880,0.08);
+    e.target.value="";
+    return;
+  }
+  photoURL=url;
   const img=$("photoPrev"); img.src=photoURL; img.classList.remove("hidden");
   $("photoHint").classList.add("hidden");
   $("btnRunOcr").classList.remove("hidden"); $("btnRetake").classList.remove("hidden");
@@ -555,20 +607,114 @@ function downscale(src,maxDim){ return new Promise(res=>{ const img=new Image();
     c.getContext("2d").drawImage(img,0,0,c.width,c.height);
     res(c.toDataURL("image/jpeg",0.85)); };
   img.onerror=()=>res(src); img.src=src; }); }
+async function ocrText(url,onprog){
+  const src=await downscale(url,1600);
+  const res=await Tesseract.recognize(src,"eng",
+    {logger:m=>{ if(m.status==="recognizing text"&&m.progress&&onprog) onprog(m.progress); }});
+  return ((res.data&&res.data.text)||"").trim();
+}
+function guessFlavor(brandId,text){
+  const b=brandById(brandId); if(!b||!b.flavors||!text) return "";
+  const up=text.toUpperCase();
+  for(const f of b.flavors){ if(up.includes(f.toUpperCase())) return f; }
+  return "";
+}
+function rowFromParsed(p){
+  const b=brandById(p.brandId)||brandById("other");
+  const pack=p.pack||b.c;
+  const P=(p.p!=null?p.p:1), R=p.r||0, C=(p.cases!=null?p.cases:(p.c||0));
+  return {ts:stamp(), scanner:scanner()||"—", brand:b.name, brandId:b.id,
+    flavor:p.flavor||"", item:p.item||"", lot:(p.lot||"").trim(),
+    bestBy:p.bestBy||"", date:p.date||"",
+    pack:pack, p:P, r:R, c:C, cans:cansFor(b,pack,P,R,C),
+    loc:lastLoc(), notes:(p.sap?("SAP "+p.sap):"")};
+}
+function renderQCard(q,i){
+  const p=q.parsed||{};
+  const b=brandById(p.brandId)||brandById("other");
+  const card=document.createElement("div"); card.className="qcard"; card.id="qcard"+i;
+  const fld=(label,val)=>'<div class="fld"><b>'+label+'</b><span class="'+(val?"":"miss")+'">'+(val||"—")+'</span></div>';
+  card.innerHTML='<div class="qh"><img src="'+q.url+'"><div><div style="font-size:16px"><b>'
+    +b.name+'</b></div><div class="note">'+(p.flavor||"flavor not found")+'</div></div></div>'
+    +fld("Item / Code",p.item)+fld("Lot",p.lot)+fld("Best By",p.bestBy)+fld("Label Date",p.date)
+    +fld("Case Pack",p.pack||b.c)+fld("Pallets",(p.p!=null?p.p:1))
+    +(p.error?'<div class="fld"><b>Error</b><span class="miss">'+p.error+'</span></div>':"")
+    +'<div class="qbtns"><button class="btn ok" data-qc="'+i+'">✓ CONFIRM</button>'
+    +'<button class="btn ghost" data-qe="'+i+'">✎ EDIT</button></div>';
+  $("queueResults").appendChild(card);
+}
+function confirmQueueCard(i,silent){
+  const q=photoQueue[i]; if(!q||!q.parsed||q.saved) return;
+  const row=rowFromParsed(q.parsed);
+  rows.push(row); q.saved=true;
+  const card=$("qcard"+i); if(card) card.style.opacity="0.4";
+  if(!silent){ beep(1040,0.12); buzz(60); toast("Added — "+fmt(row.cans)+" cans"); }
+  save(); updateBadge(); renderTable();
+}
+$("btnProcessQueue").addEventListener("click",async()=>{
+  if(typeof Tesseract==="undefined"){ toast("OCR library failed to load — check internet once, then reload."); return; }
+  if(!photoQueue.length) return;
+  const prog=$("queueProg"), bar=prog.querySelector("i");
+  prog.classList.remove("hidden");
+  $("queueResults").innerHTML="";
+  $("btnConfirmAll").classList.add("hidden");
+  const total=photoQueue.length, thumbs=$("filmstrip").children;
+  for(let i=0;i<total;i++){
+    const q=photoQueue[i];
+    $("queueNote").textContent="Processing "+(i+1)+" of "+total+"…";
+    bar.style.width=Math.round(i/total*100)+"%";
+    if(thumbs[i]) thumbs[i].classList.add("proc");
+    try{
+      const text=await ocrText(q.url,p=>{ bar.style.width=Math.round((i+p)/total*100)+"%"; });
+      q.done=true;
+      q.parsed=text?parseLabel(text):{raw:"",found:{}};
+      const b=brandById(q.parsed.brandId)||(q.parsed.brand&&brandById(q.parsed.brand))||brandById("other");
+      q.parsed.brandId=b.id; q.parsed.flavor=guessFlavor(b.id,text);
+      renderQCard(q,i);
+      if(thumbs[i]){ thumbs[i].classList.remove("proc"); thumbs[i].classList.add("done"); }
+      const w2=$("cam-wrap2"); w2.classList.remove("scan-flash"); void w2.offsetWidth; w2.classList.add("scan-flash");
+      buzz(40);
+    }catch(err){ q.parsed={raw:"",found:{},error:String(err.message||err)}; renderQCard(q,i); }
+  }
+  bar.style.width="100%";
+  $("queueNote").textContent=total+" photo"+(total>1?"s":"")+" processed — confirm each card, edit as needed, or confirm all.";
+  $("btnConfirmAll").classList.remove("hidden");
+  setTimeout(()=>prog.classList.add("hidden"),600);
+  renderFilmstrip();
+});
+$("btnConfirmAll").addEventListener("click",()=>{
+  let n=0;
+  photoQueue.forEach((q,i)=>{ if(q.parsed&&!q.saved){ confirmQueueCard(i,true); n++; } });
+  if(n){ beep(1040,0.15); buzz(80); toast(n+" rows added"); }
+  photoQueue=[]; renderFilmstrip();
+  $("queueResults").innerHTML=""; $("queueNote").textContent="";
+  $("btnConfirmAll").classList.add("hidden");
+});
+document.addEventListener("click",e=>{
+  const qc=e.target.closest("[data-qc]"), qe=e.target.closest("[data-qe]");
+  if(qc){ confirmQueueCard(parseInt(qc.dataset.qc,10)); return; }
+  if(qe){
+    const i=parseInt(qe.dataset.qe,10), q=photoQueue[i];
+    if(!q||!q.parsed) return;
+    q.saved=true;
+    const card=$("qcard"+i); if(card) card.style.opacity="0.4";
+    openConfirm(q.parsed);
+  }
+});
 $("btnRunOcr").addEventListener("click",async()=>{
   if(typeof Tesseract==="undefined"){ toast("OCR library failed to load — check internet once, then reload."); return; }
   const prog=$("ocrProg"); prog.classList.remove("hidden");
   const bar=prog.querySelector("i"); bar.style.width="2%";
   $("ocrNote").textContent="Reading label text…";
   try{
-    const src=await downscale(photoURL||$("photoPrev").src,1600);
-    const res=await Tesseract.recognize(src,"eng",
-      {logger:m=>{ if(m.status==="recognizing text"&&m.progress) bar.style.width=Math.round(m.progress*100)+"%"; }});
+    const text=await ocrText(photoURL||$("photoPrev").src, p=>{ bar.style.width=Math.round(p*100)+"%"; });
     bar.style.width="100%";
-    const text=(res.data&&res.data.text||"").trim();
     if(!text){ $("ocrNote").textContent="No text found — try a closer, sharper photo."; return; }
     const w2=$("cam-wrap2"); w2.classList.remove("scan-flash"); void w2.offsetWidth; w2.classList.add("scan-flash");
-    openConfirm(parseLabel(text));
+    const p=parseLabel(text);
+    const b=brandById(p.brandId)||(p.brand&&brandById(p.brand))||brandById("other");
+    p.brandId=b.id; p.flavor=guessFlavor(b.id,text);
+    openConfirm(p);
   }catch(err){ $("ocrNote").textContent="OCR failed: "+err.message; }
   setTimeout(()=>prog.classList.add("hidden"),600);
 });
