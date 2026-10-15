@@ -7,7 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230a0e14'/%3E%3Ctext x='32' y='42' font-size='30' text-anchor='middle' fill='%2300e5ff' font-family='sans-serif' font-weight='bold'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href='data:application/manifest+json,{"name":"PalletScan Counter","short_name":"PalletScan","display":"standalone","background_color":"%230a0e14","theme_color":"%230a0e14","start_url":".","icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}'>
+
 <title>PalletScan Counter — Warehouse Counting Tool</title>
 <style>
 :root{
@@ -56,7 +59,7 @@ header .sub b{color:var(--acc);}
   border-radius:8px;padding:10px 14px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;}
 nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:50;display:flex;
   background:#0d1420;border-top:1px solid var(--line);}
-nav.tabs button{flex:1;background:none;border:none;color:var(--dim);font-size:13px;font-weight:700;
+nav.tabs button{position:relative;flex:1;background:none;border:none;color:var(--dim);font-size:13px;font-weight:700;
   padding:14px 4px 16px;letter-spacing:.4px;cursor:pointer;min-height:64px;position:relative;}
 nav.tabs button.on{color:var(--acc);box-shadow:inset 0 3px 0 var(--acc);}
 .badge{position:absolute;top:6px;right:50%;transform:translateX(22px);background:var(--acc);
@@ -105,7 +108,7 @@ input.warn-field{border-color:var(--warn);background:#1d1508;}
   border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:8px;}
 .stepper .lab{flex:1;font-weight:800;font-size:15px;}
 .stepper .lab small{display:block;color:var(--dim);font-weight:400;font-size:11px;}
-.stepper button{width:64px;height:56px;border-radius:10px;border:1px solid var(--line);
+.stepper button{width:88px;height:68px;border-radius:10px;border:1px solid var(--line);
   background:var(--panel);color:var(--acc);font-size:26px;font-weight:900;cursor:pointer;user-select:none;}
 .stepper button:active{background:#0e2a33;}
 .stepper .val{min-width:64px;text-align:center;font-size:26px;font-weight:900;color:var(--txt);}
@@ -141,6 +144,16 @@ table.grid td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:to
 #toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#0e2a33;
   border:1px solid var(--acc);color:var(--txt);padding:12px 18px;border-radius:10px;
   font-weight:700;z-index:99;display:none;max-width:92vw;text-align:center;}
+.swipe-act{display:none;}
+tr.swiped{background:rgba(0,229,255,.10);}
+tr.swiped .swipe-act{display:inline-block;animation:tabIn .18s ease;}
+tr.swiped .iconbtn{min-width:64px;}
+#tour{position:fixed;inset:0;background:rgba(4,8,14,.88);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;}
+#tour.hidden{display:none;}
+#tourCard{background:var(--panel);border:1px solid var(--acc);border-radius:16px;padding:28px;max-width:420px;text-align:center;box-shadow:0 0 40px rgba(0,229,255,.25);}
+#tourStep h2{font-size:22px;margin:0 0 12px;} #tourStep p{color:var(--dim);font-size:15px;line-height:1.5;}
+#tourStep .big{font-size:52px;margin-bottom:10px;}
+#tourBtns{display:flex;gap:10px;margin-top:18px;}
 #undoToast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1d1508;
   border:1px solid var(--warn);color:var(--txt);padding:10px 14px;border-radius:10px;
   z-index:99;display:none;align-items:center;gap:12px;font-size:14px;max-width:92vw;}
@@ -152,7 +165,13 @@ table.grid td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:to
 .filterbar input{flex:2;}
 .filterbar select{flex:1;}
 .iconbtn{background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:8px;
-  padding:8px 10px;font-size:16px;cursor:pointer;min-height:44px;min-width:48px;}
+  padding:8px 10px;font-size:16px;cursor:pointer;min-height:52px;min-width:56px;}
+/* v7: big-button glove mode */
+body.bigbtn .stepper button{width:132px;height:102px;font-size:40px;}
+body.bigbtn .btn{min-height:88px;font-size:22px;}
+body.bigbtn .chip{min-height:64px;font-size:17px;padding:14px 18px;}
+body.bigbtn .iconbtn{min-height:64px;min-width:68px;font-size:20px;}
+
 .flag{color:var(--warn);font-weight:900;}
 /* ===== cybertech fx (CSS only) ===== */
 .specinfo{margin:6px 0 2px;font-size:13px;line-height:1.7;}
@@ -216,7 +235,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 <body>
 <header>
   <h1>PALLET<span class="cy">SCAN</span> COUNTER</h1>
-  <div class="sub">Scan &middot; Confirm &middot; Count &middot; Export &mdash; <b id="hdrStats">0 rows</b><button class="hdrbtn" id="btnSound" title="Toggle sound">🔊</button><span id="quotaWrap" title="Tap to set daily pallet quota"><svg id="quotaRing" width="26" height="26" viewBox="0 0 26 26"><circle class="bg" cx="13" cy="13" r="10" fill="none" stroke-width="4"/><circle class="fg" id="quotaFg" cx="13" cy="13" r="10" fill="none" stroke-width="4" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg><span id="quotaTxt" style="font-size:11px">0/50</span></span><span id="streakCt" title="Pallets logged today">🔥 0</span><span id="netDot" class="on" title="Online status"></span></div>
+  <div class="sub">Scan &middot; Confirm &middot; Count &middot; Export &mdash; <b id="hdrStats">0 rows</b><button class="hdrbtn" id="btnSound" title="Toggle sound">🔊</button><button class="hdrbtn" id="btnVoice" title="Voice readout">🔇</button><button class="hdrbtn" id="btnBig" title="Big buttons (glove mode)">🧤</button><span id="quotaWrap" title="Tap to set daily pallet quota"><svg id="quotaRing" width="26" height="26" viewBox="0 0 26 26"><circle class="bg" cx="13" cy="13" r="10" fill="none" stroke-width="4"/><circle class="fg" id="quotaFg" cx="13" cy="13" r="10" fill="none" stroke-width="4" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg><span id="quotaTxt" style="font-size:11px">0/50</span></span><span id="streakCt" title="Pallets logged today">🔥 0</span><span id="netDot" class="on" title="Online status"></span></div>
   <div id="scanner-id">
     <input type="text" id="scannerName" placeholder="Scanner name (e.g. Nate)" autocomplete="off">
   </div>
@@ -417,11 +436,12 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 </section>
 
 <nav class="tabs">
-  <button data-t="tab-scan" class="on">📷 SCAN</button>
-  <button data-t="tab-count">🔢 COUNT</button>
+  <button data-t="tab-scan" class="on">📷 SCAN<span class="badge" id="tabBadgeScan"></span></button>
+  <button data-t="tab-count">🔢 COUNT<span class="badge" id="tabBadgeCount"></span></button>
   <button data-t="tab-table">📋 TABLE<span class="badge" id="tabBadge"></span></button>
-  <button data-t="tab-sum">📊 SUMMARY</button>
+  <button data-t="tab-sum">📊 SUMMARY<span class="badge" id="tabBadgeSum"></span></button>
 </nav>
+<div id="tour" class="hidden"><div id="tourCard"><div id="tourStep"></div><div id="tourBtns"><button class="btn sm" id="tourNext">Next</button><button class="btn ghost sm" id="tourSkip">Got it</button></div></div></div>
 <div id="toast"></div>
 <div id="undoToast"><span id="undoMsg">Row deleted</span><button id="btnUndo">UNDO</button></div>
 <datalist id="itemCodes"></datalist>
@@ -456,11 +476,11 @@ const BRANDS = [
 const ITEM_CODES = ["VP","RWB","OV","RS","LL","SL","Cola","Raspberry Rose","CL",
   "KiwiGuava","Watermelon","Orange","Berry","Peach","Tropical"];
 const brandById = id => BRANDS.find(b=>b.id===id) || BRANDS[BRANDS.length-1];
-function brandIcon(b){ if(!b) return "\U0001F4E6"; const c=(b.category||"").toLowerCase();
-  if(c.includes("soda")) return "\U0001F964"; if(c.includes("energy")) return "\u26A1";
-  if(c.includes("iced tea")) return "\U0001F351"; if(c.includes("juice")) return "\U0001F9C3";
-  if(c.includes("flavored water")) return "\U0001F4A7"; if(c.includes("sparkling")) return "\U0001FAA7";
-  return "\U0001F4E6"; }
+function brandIcon(b){ if(!b) return "\u{1F4E6}"; const c=(b.category||"").toLowerCase();
+  if(c.includes("soda")) return "\u{1F964}"; if(c.includes("energy")) return "\u26A1";
+  if(c.includes("iced tea")) return "\u{1F351}"; if(c.includes("juice")) return "\u{1F9C3}";
+  if(c.includes("flavored water")) return "\u{1F4A7}"; if(c.includes("sparkling")) return "\u{1FAA7}";
+  return "\u{1F4E6}"; }
 /* Pack-aware math: custom case pack rescales pallet & row can values */
 const casesPerPallet = b => Math.max(1, Math.round(b.p / b.c));
 const casesPerRow    = b => Math.max(1, Math.round(casesPerPallet(b) / b.rpp));
@@ -497,6 +517,14 @@ const fileStamp = () => { const d=new Date(), p=n=>String(n).padStart(2,"0");
 const sessSlug = () => S().name.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").slice(0,40)||"session";
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.style.display="block";
   clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none",2200); }
+/* v7: voice readout + big-button mode */
+function voiceOn(){ try{ return settings().voice===true; }catch(e){ return false; } }
+function speak(t){ if(!voiceOn()) return; try{ if(!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=1.1; speechSynthesis.speak(u); }catch(e){} }
+function paintToggles(){ var bv=$("btnVoice"), bb=$("btnBig"); if(!bv||!bb) return;
+  bv.textContent=voiceOn()?"\u{1F5E3}\uFE0F":"\u{1F507}";
+  bb.style.opacity=settings().bigbtn?"1":"0.45";
+  document.body.classList.toggle("bigbtn",!!settings().bigbtn); }
 /* audio + haptics */
 let AC=null;
 function sndOn(){ try{ return settings().sound!==false; }catch(e){ return true; } }
@@ -530,6 +558,27 @@ document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("clic
   if(b.dataset.t==="tab-table") renderTable();
   if(b.dataset.t==="tab-sum") renderSummary();
 }));
+/* v7: swipe-left on table rows reveals duplicate/delete */
+(function(){ const tb=document.getElementById("gridBody"); if(!tb) return;
+  let sx=0, srow=null;
+  tb.addEventListener("touchstart",e=>{ const tr=e.target.closest("tr");
+    if(!tr) return; sx=e.touches[0].clientX; srow=tr; },{passive:true});
+  tb.addEventListener("touchmove",e=>{ if(!srow) return;
+    const dx=e.touches[0].clientX-sx;
+    if(dx<-40){ tb.querySelectorAll("tr.swiped").forEach(x=>x!==srow&&x.classList.remove("swiped"));
+      srow.classList.add("swiped"); }
+    else if(dx>40){ srow.classList.remove("swiped"); } },{passive:true});
+  tb.addEventListener("touchend",()=>{ srow=null; },{passive:true});
+  tb.addEventListener("click",e=>{ if(!e.target.closest("tr.swiped"))
+    tb.querySelectorAll("tr.swiped").forEach(x=>x.classList.remove("swiped")); });
+})();
+function setBadge(id,txt){ const b=$(id); if(!b) return; b.textContent=txt; b.classList.toggle("show",!!txt); }
+function updateTabBadges(){ try{
+  setBadge("tabBadgeScan", (typeof photoQueue!=="undefined"&&photoQueue.length)?String(photoQueue.length):"");
+  const cb=cntBrand(), ct=cansFor(cb,cb.c,cnt.P,cnt.R,cnt.C);
+  setBadge("tabBadgeCount", ct>0?fmt(ct):"");
+  let sp=0; rows.forEach(r=>sp+=r.p); setBadge("tabBadgeSum", sp>0?sp+"P":"");
+ }catch(e){} }
 function updateBadge(){ const b=$("tabBadge");
   b.textContent=rows.length; b.classList.toggle("show", rows.length>0);
   $("hdrStats").textContent=rows.length+" rows · "+fmt(rows.reduce((t,r)=>t+r.cans,0))+" cans"; }
@@ -541,7 +590,7 @@ function renderSessionSel(){ const sel=$("sessionSel"); sel.innerHTML="";
   sel.value=state.activeId; }
 $("sessionSel").addEventListener("change",e=>{ setActive(e.target.value); });
 function setActive(id){ state.activeId=id; rows=S().rows; save();
-  renderSessionSel(); updateBadge(); renderTable(); renderSummary();
+  renderSessionSel(); updateBadge(); updateTabBadges(); renderTable(); renderSummary();
   cnt.P=cnt.R=cnt.C=0; updCount(); }
 $("btnNewSession").addEventListener("click",()=>{
   const name=prompt("New session name:", "Count "+new Date().toLocaleDateString("en-US",{month:"2-digit",day:"2-digit"}));
@@ -610,7 +659,7 @@ function rapidAdd(txt){
   rows.push({ts:stamp(), scanner:scanner()||"—", brand:b.name, flavor:"", item:"", lot:txt,
     bestBy:"", date:"", pack:pack, p:1, r:0, c:0, cans:cansFor(b,pack,1,0,0),
     loc:lastLoc(), notes:"rapid scan"});
-  rapidCount++; save(); updateBadge();
+  rapidCount++; save(); updateBadge(); updateTabBadges();
   $("rapidCount").textContent="· "+rapidCount+" added";
   toast("Rapid +"+rapidCount+": "+txt.slice(0,30));
 }
@@ -716,7 +765,7 @@ function confirmQueueCard(i,silent){
   rows.push(row); q.saved=true;
   const card=$("qcard"+i); if(card) card.style.opacity="0.4";
   if(!silent){ beep(1040,0.12); buzz(60); toast("Added — "+fmt(row.cans)+" cans"); }
-  save(); updateBadge(); renderTable();
+  save(); updateBadge(); updateTabBadges(); renderTable();
 }
 $("btnProcessQueue").addEventListener("click",async()=>{
   if(typeof Tesseract==="undefined"){ toast("OCR library failed to load — check internet once, then reload."); return; }
@@ -751,8 +800,14 @@ $("btnProcessQueue").addEventListener("click",async()=>{
 });
 $("btnConfirmAll").addEventListener("click",()=>{
   let n=0;
+  const before=rows.length;
   photoQueue.forEach((q,i)=>{ if(q.parsed&&!q.saved){ confirmQueueCard(i,true); n++; } });
-  if(n){ beep(1040,0.15); buzz(80); toast(n+" rows added"); }
+  if(n){ beep(1040,0.15); buzz(80);
+  lastDel=null; lastBulk={count:rows.length-before, sid:state.activeId};
+  const u=$("undoToast"); $("undoMsg").textContent=n+" rows added";
+  u.style.display="flex"; clearTimeout(undoTimer);
+  undoTimer=setTimeout(()=>u.style.display="none",5000);
+  speak(n+" rows added, "+fmt(rows.slice(before).reduce((t,r)=>t+r.cans,0))+" cans logged"); }
   photoQueue=[]; renderFilmstrip();
   $("queueResults").innerHTML=""; $("queueNote").textContent="";
   $("btnConfirmAll").classList.add("hidden");
@@ -764,7 +819,7 @@ document.addEventListener("click",e=>{
     if(!q||!q.parsed) return;
     const inp=document.createElement("input");
     inp.value=q.parsed[key]||""; inp.className="fldedit";
-    inp.placeholder=key==="bestBy"?"\U0001F4C5 Type best-by (MM/DD/YYYY)":"\U0001F5D3\uFE0F Type date (MM/DD/YYYY)";
+    inp.placeholder=key==="bestBy"?"\u{1F4C5} Type best-by (MM/DD/YYYY)":"\u{1F5D3}\uFE0F Type date (MM/DD/YYYY)";
     inp.setAttribute("inputmode","numeric");
     fe.replaceWith(inp); inp.focus();
     let done=false;
@@ -856,8 +911,12 @@ function fillFlavors(selId,chipsId,brandId){
   const ch=$(chipsId); ch.innerHTML="";
   (b.flavors||[]).forEach(f=>{ const c=document.createElement("button");
     c.type="button"; c.className="chip"; c.textContent=f;
-    c.addEventListener("click",()=>{ sel.value=f; markChip(chipsId,f); }); ch.appendChild(c); });
+    c.addEventListener("click",()=>{ sel.value=f; markChip(chipsId,f); setSticky("flavor_"+brandId,f); }); ch.appendChild(c); });
 }
+  /* v7: restore sticky flavor for this brand */
+  try{ const sf=sticky("flavor_"+brandId,"");
+    if(sf && (b.flavors||[]).indexOf(sf)>=0){ sel.value=sf; markChip(chipsId,sf); } }catch(e){}
+
 function markChip(chipsId,val){ const ch=$(chipsId); if(!ch) return;
   ch.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.textContent===val)); }
 function showSpecInfo(elId,brandId){
@@ -985,11 +1044,11 @@ $("btnConfirm").addEventListener("click",()=>{
     pack:pack, p:P, r:R, c:C, cans:cansFor(b,pack,P,R,C),
     loc:$("fLoc").value.trim(), notes:$("fNotes").value.trim()};
   if(editingIndex>=0){ rows[editingIndex]=row; toast("Row updated"); }
-  else { rows.push(row); toast("Added — "+fmt(row.cans)+" cans"); }
+  else { rows.push(row); toast("Added — "+fmt(row.cans)+" cans"); speak(row.p+" pallet"+(row.p==1?"":"s")+", "+fmt(row.cans)+" cans logged"); }
   if(row.loc) lastLocCache=row.loc;
-  setSticky("brand",b.id);
+  setSticky("brand",b.id); setSticky("flavor_"+b.id,$("sFlavor").value||"");
   beep(1040,0.12); buzz(60);
-  save(); updateBadge(); renderTable();
+  save(); updateBadge(); updateTabBadges(); renderTable();
   $("confirm-card").classList.add("hidden");
   delete document.querySelector("#confirm-card").dataset.touched;
 });
@@ -1039,7 +1098,7 @@ $("btnLogCount").addEventListener("click",()=>{
   if(row.loc) lastLocCache=row.loc;
   setSticky("brand",b.id);
   beep(1040,0.12); buzz(60);
-  save(); updateBadge(); cnt.P=cnt.R=cnt.C=0; updCount();
+  save(); updateBadge(); updateTabBadges(); cnt.P=cnt.R=cnt.C=0; updCount();
   toast("Count logged — "+fmt(row.cans)+" cans");
 });
 
@@ -1075,7 +1134,8 @@ function renderTable(){
       "<td>"+r.p+"</td><td>"+r.r+"</td><td>"+r.c+flag+"</td><td><b>"+fmt(r.cans)+"</b></td>"+
       "<td>"+esc(r.loc)+"</td>"+
       "<td style='white-space:nowrap'><button class='iconbtn' data-a='edit' data-i='"+i+"'>✎</button> "+
-      "<button class='iconbtn' data-a='del' data-i='"+i+"'>&times;</button></td>";
+      "<button class='iconbtn swipe-act' data-a='dup' data-i='"+i+"' title='Duplicate'>⧉</button> "+
+       "<button class='iconbtn' data-a='del' data-i='"+i+"'>&times;</button></td>";
     tb.appendChild(tr);
   });
   if(!rows.length)
@@ -1093,16 +1153,17 @@ function renderTable(){
       s.className="arr"; s.textContent=sortDir>0?" ▲":" ▼"; th.appendChild(s); } });
   tb.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
     const i=+b.dataset.i;
-    if(b.dataset.a==="edit"){ const r=rows[i];
+    if(b.dataset.a==="dup"){ const r0=rows[i]; const cp=JSON.parse(JSON.stringify(r0)); cp.ts=stamp(); rows.splice(i+1,0,cp); save(); renderTable(); toast("Row duplicated"); beep(1040,0.1); }
+     else if(b.dataset.a==="edit"){ const r=rows[i];
       openConfirm({brandId:r.brandId||brandIdByName(r.brand), flavor:r.flavor, item:r.item, lot:r.lot,
         bestBy:r.bestBy, date:r.date, p:r.p, r:r.r, cases:r.c, pack:r.pack,
         loc:r.loc, notes:r.notes, found:{item:1,lot:1}}, i);
       document.querySelector('[data-t="tab-scan"]').click();
     } else delRow(i);
   }));
-  updateBadge();
+  updateBadge(); updateTabBadges();
 }
-let lastDel=null, undoTimer=null;
+let lastDel=null, lastBulk=null, undoTimer=null;
 function delRow(i){
   lastDel={row:rows[i], idx:i, sid:state.activeId};
   rows.splice(i,1); save(); renderTable();
@@ -1111,6 +1172,10 @@ function delRow(i){
   undoTimer=setTimeout(()=>u.style.display="none",6000);
 }
 $("btnUndo").addEventListener("click",()=>{
+  if(lastBulk&&lastBulk.sid===state.activeId){ const s=S();
+    s.rows.splice(s.rows.length-lastBulk.count,lastBulk.count); rows=s.rows;
+    lastBulk=null; clearTimeout(undoTimer); $("undoToast").style.display="none";
+    save(); renderTable(); toast("Bulk add undone"); return; }
   if(!lastDel||lastDel.sid!==state.activeId){ $("undoToast").style.display="none"; return; }
   const s=S(); s.rows.splice(Math.min(lastDel.idx,s.rows.length),0,lastDel.row);
   rows=s.rows; lastDel=null; clearTimeout(undoTimer);
@@ -1474,6 +1539,25 @@ renderSessionSel=function(){
 /* ---- #18: sound toggle ---- */
 function applySound(){ const b=$("btnSound"); if(b) b.textContent=sndOn()?"🔊":"🔇"; }
 $("btnSound").addEventListener("click",()=>{ settings().sound=!sndOn(); save(); applySound(); toast(sndOn()?"🔊 Sound on":"🔇 Sound off"); });
+$("btnVoice").addEventListener("click",()=>{ settings().voice=!voiceOn(); save(); paintToggles();
+(function(){ /* v7 first-run tour */
+  var STEPS=[
+    {e:"\u{1F4F7}",t:"1 \u2014 Snap the tag",d:"Point your phone at a pallet label and tap the big shutter button. Rapid-fire mode queues multiple photos \u2014 tap tap tap down the aisle."},
+    {e:"\u2705",t:"2 \u2014 Confirm the fields",d:"OCR pulls Lot, Best By, Date and more into labeled cards. Tap any amber dash to type a missed field. Hit CONFIRM ALL to log everything at once."},
+    {e:"\u{1F4E5}",t:"3 \u2014 Export your CSV",d:"Head to the TABLE tab any time and tap DOWNLOAD CSV. Counts export with session name and date in the filename."}];
+  var si=0;
+  function show(i){ si=i; var s=STEPS[i];
+    $("tourStep").innerHTML='<div class="big">'+s.e+'</div><h2>'+s.t+'</h2><p>'+s.d+'</p>';
+    $("tourNext").textContent = i<STEPS.length-1 ? "Next \u2192" : "Start scanning \u{1F4F7}"; }
+  function done(){ try{localStorage.setItem("palletscan_tour_done","1");}catch(e){} $("tour").classList.add("hidden"); }
+  $("tourNext").addEventListener("click",function(){ if(si<STEPS.length-1) show(si+1); else done(); });
+  $("tourSkip").addEventListener("click",done);
+  try{ if(!localStorage.getItem("palletscan_tour_done")){ show(0); $("tour").classList.remove("hidden"); } }catch(e){}
+})();
+  if(voiceOn()) speak("Voice readout on"); });
+$("btnBig").addEventListener("click",()=>{ settings().bigbtn=!settings().bigbtn; save(); paintToggles();
+  toast(settings().bigbtn?"\u{1F9E4} Big buttons ON":"Big buttons off"); });
+paintToggles();
 
 /* ---- #20,#21: quota ring + streak ---- */
 function todayPallets(){ return rowsToday().reduce((t,r)=>t+(+r.p||0),0); }
@@ -1496,7 +1580,7 @@ $("quotaWrap").addEventListener("click",()=>{
 });
 // hook quota updates into badge/table renders
 const _updateBadge=updateBadge;
-updateBadge=function(){ _updateBadge(); updateQuota(); };
+updateBadge=function(){ _updateBadge(); updateTabBadges(); updateQuota(); };
 
 /* ---- #23: CSV import recovery ---- */
 const _parseCsv=parseCsv;
@@ -1556,7 +1640,7 @@ try{ $("scannerName").value=localStorage.getItem("palletscan_name")||""; }catch(
 $("scannerName").addEventListener("change",e=>{
   try{ localStorage.setItem("palletscan_name",e.target.value); }catch(_){}
   renderTable(); });
-renderSessionSel(); applySize(); applyWake(); updCount(); updateBadge(); keepAwake();
+renderSessionSel(); applySize(); applyWake(); updCount(); updateBadge(); updateTabBadges(); keepAwake();
 if(!window.isSecureContext){
   const n=document.createElement("div"); n.className="card";
   n.innerHTML="<h2>Camera note</h2><div class='note'>This page was opened over an insecure connection, so the phone camera is blocked by the browser. Host the file on HTTPS (e.g. GitHub Pages) to enable scanning — manual entry and counting work fine regardless.</div>";
@@ -1569,7 +1653,7 @@ if(!window.isSecureContext){
 /* ================= LIVE SCAN ================= */
 let liveOn=false, liveBusy=false, liveFrames=0, liveMerged=null, liveTimer=null, liveStream=null, liveLastUrl="";
 const LIVE_FIELDS=[["brand","Brand"],["flavor","Flavor"],["lot","Lot"],["bestBy","Best By"],["date","Date"],["pack","Case Pack"]];
-const LIVE_EMOJI={brand:"\U0001F3ED",flavor:"\U0001F351",lot:"\U0001F516",bestBy:"\U0001F4C5",date:"\U0001F5D3\uFE0F",pack:"\U0001F4E6"};
+const LIVE_EMOJI={brand:"\u{1F3ED}",flavor:"\u{1F351}",lot:"\u{1F516}",bestBy:"\u{1F4C5}",date:"\u{1F5D3}\uFE0F",pack:"\u{1F4E6}"};
 function liveGot(f){
   if(!liveMerged) return false;
   if(f==="brand") return !!(liveMerged.brandId&&liveMerged.brandId!=="other");
@@ -1587,30 +1671,30 @@ function renderLiveCheck(){
   $("liveCheck").innerHTML=LIVE_FIELDS.map(function(x){
     const k=x[0],l=x[1];
     return "<div>"+(liveGot(k)?"\u2705":"\u2B1C")+" "+(LIVE_EMOJI[k]||"")+" "+l+(liveGot(k)?' <small style="color:var(--acc)">'+esc(liveVal(k))+"</small>":"")+"</div>";
-  }).join("")+(n===6?'<div style="margin-top:4px;font-size:16px">\U0001F389 All captured!</div>':"");
+  }).join("")+(n===6?'<div style="margin-top:4px;font-size:16px">\u{1F389} All captured!</div>':"");
 }
 async function startLive(){
-  if(typeof Tesseract==="undefined"){ toast("OCR library failed to load \u2014 check internet once, then reload. \U0001F4E1"); return; }
+  if(typeof Tesseract==="undefined"){ toast("OCR library failed to load \u2014 check internet once, then reload. \u{1F4E1}"); return; }
   try{
     liveStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});
-  }catch(err){ toast("Camera blocked \u2014 allow camera access and retry. \U0001F4F7"); return; }
+  }catch(err){ toast("Camera blocked \u2014 allow camera access and retry. \u{1F4F7}"); return; }
   const v=$("liveVideo"); v.srcObject=liveStream;
   try{ await v.play(); }catch(e){}
   liveOn=true; liveBusy=false; liveFrames=0; liveLastUrl="";
   liveMerged={raw:"",found:{},brandId:"other",flavor:"",lot:"",bestBy:"",date:"",pack:null,p:null,r:null,cases:null,sap:""};
   $("liveWrap").classList.remove("hidden");
   $("btnLiveScan").classList.add("hidden");
-  renderLiveCheck(); $("liveFrames").textContent="frames tried: 0 \u2014 point at the label \U0001F3AF";
+  renderLiveCheck(); $("liveFrames").textContent="frames tried: 0 \u2014 point at the label \u{1F3AF}";
   beep(660,0.1);
   liveTimer=setInterval(liveTick,1500);
-  toast("\U0001F534 Live scan on \u2014 hold steady on the label");
+  toast("\u{1F534} Live scan on \u2014 hold steady on the label");
 }
 function liveTick(){
   if(!liveOn||liveBusy) return;
   const v=$("liveVideo");
   if(!v||!v.videoWidth) return;
   liveBusy=true; liveFrames++;
-  $("liveFrames").textContent="frames tried: "+liveFrames+" \u2014 scanning\u2026 \U0001F50D";
+  $("liveFrames").textContent="frames tried: "+liveFrames+" \u2014 scanning\u2026 \u{1F50D}";
   (async()=>{
     try{
       const c=$("liveCanvas");
@@ -1655,7 +1739,7 @@ function stopLive(auto){
   $("btnConfirmAll").classList.remove("hidden");
   const n=LIVE_FIELDS.filter(function(x){return liveGot(x[0]);}).length;
   beep(auto?1320:880,0.15); buzz(60);
-  toast(auto?"\U0001F389 All 6 fields captured!":"\u23F9 Stopped \u2014 "+n+" of 6 fields captured");
+  toast(auto?"\u{1F389} All 6 fields captured!":"\u23F9 Stopped \u2014 "+n+" of 6 fields captured");
   setTimeout(()=>{ const card=$("qcard"+qi); if(card) card.scrollIntoView({behavior:"smooth",block:"nearest"}); },150);
 }
 $("btnLiveScan").addEventListener("click",startLive);
