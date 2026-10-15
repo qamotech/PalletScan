@@ -138,6 +138,27 @@ table.grid td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:to
 .iconbtn{background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:8px;
   padding:8px 10px;font-size:16px;cursor:pointer;min-height:44px;min-width:48px;}
 .flag{color:var(--warn);font-weight:900;}
+/* ===== cybertech fx (CSS only) ===== */
+.specinfo{margin:6px 0 2px;font-size:13px;line-height:1.7;}
+.prcbadge{display:inline-block;background:#0e2a33;border:1px solid var(--acc);color:var(--acc);
+  border-radius:6px;padding:1px 8px;font-size:11px;font-weight:800;margin-left:6px;white-space:nowrap;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px;}
+.chip{background:var(--bg2);border:1px solid var(--line);color:var(--dim);border-radius:20px;
+  padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;min-height:40px;}
+.chip.on{background:#0e2a33;border-color:var(--acc);color:var(--acc);
+  box-shadow:0 0 10px rgba(0,229,255,.35);}
+@keyframes tabIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.tab.on{animation:tabIn .22s ease;}
+@keyframes scanFlash{0%{box-shadow:0 0 0 0 rgba(0,230,118,.85);}100%{box-shadow:0 0 0 24px rgba(0,230,118,0);}}
+.scan-flash{animation:scanFlash .6s ease-out;}
+.btn{transition:transform .08s,box-shadow .15s;}
+.btn:active{transform:scale(.97);box-shadow:0 0 18px rgba(0,229,255,.55);}
+@keyframes tick{50%{transform:scale(1.3);color:var(--acc);}}
+.val.tick{animation:tick .18s ease;}
+nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;height:3px;border-radius:2px;
+  background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200% 100%;
+  animation:slideGlow 2.6s linear infinite;}
+@keyframes slideGlow{to{background-position:200% 0;}}
 @media(min-width:700px){ .row2{grid-template-columns:1fr 1fr 1fr 1fr;} }
 </style>
 </head>
@@ -202,6 +223,9 @@ table.grid td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:to
     <div class="note" style="margin-bottom:8px">Check every field. Amber borders = scan didn't find a value. Fix, then confirm.</div>
     <div class="ocr-raw hidden" id="ocrRaw"></div>
     <label class="f">Brand</label><select id="fBrand"></select>
+    <div class="note specinfo" id="sSpecInfo"></div>
+    <label class="f">Flavor</label><select id="sFlavor"></select>
+    <div class="chips" id="sChips"></div>
     <div class="row2">
       <div><label class="f">Item / Code</label><input type="text" id="fItem" list="itemCodes" placeholder="e.g. VP, Gridlock" autocomplete="off"></div>
       <div><label class="f">Lot</label><input type="text" id="fLot" placeholder="e.g. A234AO05626A" autocomplete="off"></div>
@@ -235,6 +259,9 @@ table.grid td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:to
     <h2>Quick count &mdash; merged counter</h2>
     <div class="note" style="margin-bottom:6px">Same P / R / C math as your cyber-count sheets. Tap (or hold) to count, LOG COUNT drops it in the table.</div>
     <label class="f">Brand</label><select id="cBrand"></select>
+    <div class="note specinfo" id="cSpecInfo"></div>
+    <label class="f">Flavor</label><select id="cFlavor"></select>
+    <div class="chips" id="cChips"></div>
     <label class="f">Item / Code (optional)</label><input type="text" id="cItem" list="itemCodes" placeholder="e.g. VP, Summer Popz" autocomplete="off">
     <label class="f">Quick shorthand (e.g. 3p 2r 5c)</label>
     <input type="text" id="cShort" placeholder="type counts, Enter to apply" autocomplete="off">
@@ -264,7 +291,7 @@ table.grid td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:to
     </div>
     <div class="tblwrap"><table class="grid" id="grid">
       <thead><tr>
-        <th data-k="ts">Time</th><th data-k="scanner">Scanner</th><th data-k="brand">Brand</th>
+        <th data-k="ts">Time</th><th data-k="scanner">Scanner</th><th data-k="brand">Brand</th><th data-k="flavor">Flavor</th>
         <th data-k="item">Item</th><th data-k="lot">Lot</th><th data-k="bestBy">Best&nbsp;By</th>
         <th data-k="p">P</th><th data-k="r">R</th><th data-k="c">C</th>
         <th data-k="cans">Cans</th><th data-k="loc">Loc</th><th></th>
@@ -334,12 +361,25 @@ table.grid td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:to
 /* ================= BRAND SPECS (from your cyber-count sheets) ================
    p = cans per pallet | rpp = rows per pallet | c = cans per case (case pack)  */
 const BRANDS = [
-  {id:"popz",     name:"Popz",              p:2400, rpp:10, c:24, spec:"24-Pack"},
-  {id:"waves",    name:"Waves",             p:2496, rpp:8,  c:24, spec:"24-Pack"},
-  {id:"bellevie", name:"Belle Vie",         p:2400, rpp:10, c:24, spec:"24-Pack"},
-  {id:"frost",    name:"Frost / Sum Frost", p:1680, rpp:7,  c:12, spec:"12-Pack"},
-  {id:"gridlock", name:"Gridlock",          p:1680, rpp:7,  c:12, spec:"12-Pack"},
-  {id:"other",    name:"Other / Mixed",     p:2400, rpp:10, c:24, spec:"24-Pack"},
+  {id:"popz", name:"POPZ 24pk", p:2400, rpp:10, c:24, spec:"12 oz 202 // 24-Pack", category:"Soda",
+   flavors:["Lemon Lime","Raspberry Rose","Cherry Lime","Strawberry Lemon","Cola","Dr Popz"]},
+  {id:"popz-seasonal-12", name:"Seasonal Popz 12pk", p:2400, rpp:10, c:12, spec:"12 oz 202 // 12-Pack", category:"Soda",
+   flavors:["Spiced Apple Cider","Pomegranate Orange","Cranberry","Red White & Blue","Rainbow Sherbet","Orange Vanilla","Orange Mandarin","Passion Fruit Orange Guava","Berry Blast"]},
+  {id:"frost", name:"Frost 12pk", p:1680, rpp:7, c:12, spec:"16 oz 202 // 12-Pack", category:"Sparkling Water",
+   flavors:["Strawberry Citrus","Black Raspberry","Blue Raspberry","Pineapple Mango","Red White & Blue","Strawberry Watermelon"]},
+  {id:"gridlock-16", name:"Gridlock 12pk", p:1680, rpp:7, c:12, spec:"16 oz 202 // 12-Pack", category:"Energy",
+   flavors:["Paradise","Original","Sunrise","Ultra White"]},
+  {id:"waves", name:"Waves 24pk", p:2496, rpp:8, c:24, spec:"12 oz Sleek // 24-Pack", category:"Flavored Water",
+   flavors:["Berry","Peach","Kiwi Guava","Watermelon","Orange","Tropical"]},
+  {id:"natures-nectar-12", name:"Nature's Nectar 12pk", p:2496, rpp:8, c:12, spec:"250ml // 12-Pack", category:"Juice / Sparkling",
+   flavors:["Grapefruit","Blackberry","Clementine"]},
+  {id:"bellevie-24", name:"Belle Vie 24pk", p:2400, rpp:10, c:24, spec:"12 oz 202 // 24-Pack", category:"Sparkling Water",
+   flavors:["Pure","Lime","Strawberry","Blackberry","Lemon","Grapefruit"]},
+  {id:"popz-tea", name:"Popz Tea 12pk", p:2496, rpp:8, c:12, spec:"12 oz Sleek // 12-Pack", category:"Iced Tea",
+   flavors:["Half and Half","Raspberry","Sweet Tea","Peach"]},
+  {id:"vivee", name:"Vivee 24pk", p:2496, rpp:8, c:24, spec:"12 oz Sleek // 24-Pack", category:"Sleek Sparkling",
+   flavors:["Berry","Citrus","Pure"]},
+  {id:"other", name:"Other / Mixed", p:2400, rpp:10, c:24, spec:"24-Pack", category:"—", flavors:[]},
 ];
 const ITEM_CODES = ["VP","RWB","OV","RS","LL","SL","Cola","Raspberry Rose","CL",
   "KiwiGuava","Watermelon","Orange","Berry","Peach","Tropical"];
@@ -479,12 +519,13 @@ $("btnTorch").addEventListener("click",async()=>{
   }catch(e){ toast("Torch not supported on this camera."); torchOn=false; } });
 function onBarcode(txt){
   if(rapidMode){ rapidAdd(txt); return; }
+  const w=$("cam-wrap"); w.classList.remove("scan-flash"); void w.offsetWidth; w.classList.add("scan-flash");
   toast("Barcode read: "+txt.slice(0,40));
   openConfirm({lot:txt, raw:"BARCODE: "+txt});
 }
 function rapidAdd(txt){
   const b=brandById("other"), pack=b.c;
-  rows.push({ts:stamp(), scanner:scanner()||"—", brand:b.name, item:"", lot:txt,
+  rows.push({ts:stamp(), scanner:scanner()||"—", brand:b.name, flavor:"", item:"", lot:txt,
     bestBy:"", date:"", pack:pack, p:1, r:0, c:0, cans:cansFor(b,pack,1,0,0),
     loc:lastLoc(), notes:"rapid scan"});
   rapidCount++; save(); updateBadge();
@@ -526,6 +567,7 @@ $("btnRunOcr").addEventListener("click",async()=>{
     bar.style.width="100%";
     const text=(res.data&&res.data.text||"").trim();
     if(!text){ $("ocrNote").textContent="No text found — try a closer, sharper photo."; return; }
+    const w2=$("cam-wrap2"); w2.classList.remove("scan-flash"); void w2.offsetWidth; w2.classList.add("scan-flash");
     openConfirm(parseLabel(text));
   }catch(err){ $("ocrNote").textContent="OCR failed: "+err.message; }
   setTimeout(()=>prog.classList.add("hidden"),600);
@@ -547,9 +589,14 @@ function parseLabel(text){
   if(pack) out.pack=parseInt(pack,10);
   const sap=grab(/SAP[:\s]*([A-Z0-9]{4,})/i); if(sap){ out.sap=sap; out.found.sap=true; }
   for(const code of ITEM_CODES){ if(up.includes(code.toUpperCase())){ out.item=code; out.found.item=true; break; } }
-  if(!out.item) for(const b of BRANDS){
-    if(b.name!=="Other / Mixed"&&up.includes(b.name.toUpperCase().split(" /")[0])){
-      out.brand=b.id; out.item=b.name; out.found.item=true; out.found.brand=true; break; } }
+  const BKEYS={"popz-seasonal-12":["SEASONAL"],"popz-tea":["POPZ TEA"],"frost":["FROST"],
+    "gridlock-16":["GRIDLOCK"],"waves":["WAVES"],"natures-nectar-12":["NECTAR"],
+    "bellevie-24":["BELLE VIE","BELLE"],"vivee":["VIVEE"],"popz":["POPZ"]};
+  if(!out.item) for(const bid of ["popz-seasonal-12","popz-tea","frost","gridlock-16",
+      "waves","natures-nectar-12","bellevie-24","vivee","popz"]){
+    if((BKEYS[bid]||[]).some(k=>up.includes(k))){
+      out.brand=bid; out.item=brandById(bid).name;
+      out.found.item=true; out.found.brand=true; break; } }
   return out;
 }
 
@@ -558,6 +605,43 @@ const brandSel=$("fBrand"), cBrandSel=$("cBrand");
 BRANDS.forEach(b=>{ for(const s of [brandSel,cBrandSel]){
   const o=document.createElement("option"); o.value=b.id;
   o.textContent=b.name+" — "+b.spec; s.appendChild(o); } });
+/* ---- flavors, spec info, item-code suggestions ---- */
+function prcBadge(b){ return "P "+fmt(b.p)+" · R "+fmt(Math.round(b.p/b.rpp))+" · C "+b.c; }
+function fillFlavors(selId,chipsId,brandId){
+  const b=brandById(brandId), sel=$(selId);
+  sel.innerHTML="";
+  const eo=document.createElement("option"); eo.value=""; eo.textContent="—"; sel.appendChild(eo);
+  (b.flavors||[]).forEach(f=>{ const o=document.createElement("option");
+    o.value=f; o.textContent=f; sel.appendChild(o); });
+  const ch=$(chipsId); ch.innerHTML="";
+  (b.flavors||[]).forEach(f=>{ const c=document.createElement("button");
+    c.type="button"; c.className="chip"; c.textContent=f;
+    c.addEventListener("click",()=>{ sel.value=f; markChip(chipsId,f); }); ch.appendChild(c); });
+}
+function markChip(chipsId,val){ const ch=$(chipsId); if(!ch) return;
+  ch.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.textContent===val)); }
+function showSpecInfo(elId,brandId){
+  const b=brandById(brandId);
+  $(elId).innerHTML="<b style='color:var(--acc)'>"+esc(b.spec)+"</b> · "+esc(b.category||"")+
+    " <span class='prcbadge'>"+prcBadge(b)+"</span>";
+}
+function syncItemCodes(brandId){
+  const b=brandById(brandId);
+  const all=[...ITEM_CODES,...(b.flavors||[])], seen={};
+  const uniq=all.filter(x=>{ const k=String(x).toLowerCase();
+    if(seen[k]) return false; seen[k]=1; return true; });
+  $("itemCodes").innerHTML=uniq.map(c=>"<option value='"+esc(c)+"'>").join("");
+}
+function onBrandChange(which){
+  if(which==="scan"||which==="both"){
+    const id=brandSel.value;
+    fillFlavors("sFlavor","sChips",id); showSpecInfo("sSpecInfo",id); syncItemCodes(id);
+  }
+  if(which==="count"||which==="both"){
+    const id=cBrandSel.value;
+    fillFlavors("cFlavor","cChips",id); showSpecInfo("cSpecInfo",id); syncItemCodes(id);
+  }
+}
 const fltBrand=$("fltBrand");
 BRANDS.forEach(b=>{ const o=document.createElement("option"); o.value=b.name; o.textContent=b.name; fltBrand.appendChild(o); });
 $("itemCodes").innerHTML = ITEM_CODES.map(c=>"<option value='"+esc(c)+"'>").join("");
@@ -572,6 +656,9 @@ function openConfirm(p, idx){
   const raw=$("ocrRaw");
   if(p.raw){ raw.textContent=p.raw; raw.classList.remove("hidden"); } else raw.classList.add("hidden");
   brandSel.value=p.brandId||p.brand&&brandIdByName(p.brand)||guessBrand(p.item)||sticky("brand","other");
+  onBrandChange("scan");
+  $("sFlavor").value=p.flavor||"";
+  markChip("sChips",$("sFlavor").value);
   syncPack();
   $("fItem").value=p.item||"";
   $("fLot").value=p.lot||"";
@@ -589,7 +676,7 @@ function openConfirm(p, idx){
   card.scrollIntoView({behavior:"smooth"});
   ["fP","fR","fC","fPack"].forEach(id=>$(id).oninput=()=>{dupArmed=false;$("btnConfirm").classList.remove("armed");updConfirmTotal();});
   ["fItem","fLot"].forEach(id=>$(id).oninput=()=>{dupArmed=false;$("btnConfirm").classList.remove("armed");$("dupWarn").classList.remove("show");});
-  brandSel.onchange=()=>{ syncPack(); updConfirmTotal(); };
+  brandSel.onchange=()=>{ syncPack(); updConfirmTotal(); onBrandChange("scan"); };
   $("fBestBy").oninput=checkExpiry;
 }
 function brandIdByName(n){ const b=BRANDS.find(x=>x.name===n); return b?b.id:"other"; }
@@ -597,10 +684,14 @@ function sticky(k,fb){ try{ return localStorage.getItem("palletscan_sticky_"+k)|
 function setSticky(k,v){ try{ localStorage.setItem("palletscan_sticky_"+k,v); }catch(e){} }
 function guessBrand(item){ if(!item) return null;
   const u=item.toUpperCase();
-  if(/GRIDLOCK/.test(u)) return "gridlock";
+  if(/GRIDLOCK/.test(u)) return "gridlock-16";
   if(/WAVE/.test(u)) return "waves";
   if(/FROST/.test(u)) return "frost";
-  if(/BELLE/.test(u)) return "bellevie";
+  if(/BELLE/.test(u)) return "bellevie-24";
+  if(/VIVEE/.test(u)) return "vivee";
+  if(/NECTAR/.test(u)) return "natures-nectar-12";
+  if(/TEA/.test(u)) return "popz-tea";
+  if(/SEASONAL|CIDER|CRANBERRY|POMEGRANATE|SHERBET/.test(u)) return "popz-seasonal-12";
   if(/POPZ|VP|RWB|OV|RS|LL|SL|COLA|KIWI|WATERMELON|ORANGE|BERRY|PEACH|TROPICAL|RASPBERRY/.test(u)) return "popz";
   return null; }
 function syncPack(){ const b=brandById(brandSel.value);
@@ -648,6 +739,7 @@ $("btnConfirm").addEventListener("click",()=>{
       beep(440,0.2); return; } }
   const row={ts: editingIndex>=0?rows[editingIndex].ts:stamp(),
     scanner:scanner()||"—", brand:b.name, brandId:b.id,
+    flavor:$("sFlavor").value,
     item:$("fItem").value.trim(), lot:lot,
     bestBy:$("fBestBy").value.trim(), date:$("fDate").value.trim(),
     pack:pack, p:P, r:R, c:C, cans:cansFor(b,pack,P,R,C),
@@ -683,9 +775,12 @@ function bindHold(btn,fn){ let t1,t2;
   ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,end)); }
 document.querySelectorAll(".stepper button").forEach(btn=>bindHold(btn,()=>{
   const s=btn.dataset.s, d=+btn.dataset.d;
-  cnt[s]=Math.max(0,cnt[s]+d); updCount(); }));
-cBrandSel.addEventListener("change",updCount);
-cBrandSel.value=sticky("brand","popz"); updCount();
+  cnt[s]=Math.max(0,cnt[s]+d); updCount();
+  const v=$("c"+s); v.classList.remove("tick"); void v.offsetWidth; v.classList.add("tick"); }));
+cBrandSel.addEventListener("change",()=>{ updCount(); onBrandChange("count"); });
+cBrandSel.value=sticky("brand","popz"); updCount(); onBrandChange("count");
+$("sFlavor").addEventListener("change",()=>markChip("sChips",$("sFlavor").value));
+$("cFlavor").addEventListener("change",()=>markChip("cChips",$("cFlavor").value));
 $("cShort").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault();
   const s=parseShort($("cShort").value); cnt.P=s.P; cnt.R=s.R; cnt.C=s.C; updCount(); }});
 $("btnResetCount").addEventListener("click",()=>{ cnt.P=cnt.R=cnt.C=0; updCount(); });
@@ -696,6 +791,7 @@ $("btnLogCount").addEventListener("click",()=>{
   const n=dupCount(lot,-1);
   if(lot&&n>0&&!confirm("Lot "+lot+" already scanned "+n+"x this session. Log anyway?")) return;
   const row={ts:stamp(), scanner:scanner()||"—", brand:b.name, brandId:b.id,
+    flavor:$("cFlavor").value,
     item:$("cItem").value.trim(), lot:lot, bestBy:"", date:"", pack:b.c,
     p:cnt.P, r:cnt.R, c:cnt.C, cans:cansFor(b,b.c,cnt.P,cnt.R,cnt.C),
     loc:$("cLoc").value.trim(), notes:"quick count"};
@@ -720,7 +816,7 @@ function outlier(r){ const b=brandById(r.brandId||brandIdByName(r.brand));
 function viewRows(){
   let v=rows.map((r,i)=>({r,i}));
   if(filterBrand) v=v.filter(x=>x.r.brand===filterBrand);
-  if(filterQ) v=v.filter(x=>[x.r.lot,x.r.item,x.r.loc,x.r.brand,x.r.scanner]
+  if(filterQ) v=v.filter(x=>[x.r.lot,x.r.item,x.r.flavor,x.r.loc,x.r.brand,x.r.scanner]
     .join(" ").toLowerCase().includes(filterQ));
   if(sortKey){ const k=sortKey,d=sortDir;
     v.sort((a,b)=>{ const x=a.r[k],y=b.r[k];
@@ -734,7 +830,7 @@ function renderTable(){
   v.forEach(({r,i})=>{
     const tr=document.createElement("tr");
     const flag=outlier(r)?" <span class='flag' title='Cases exceed a full pallet'>⚠</span>":"";
-    tr.innerHTML="<td>"+r.ts+"</td><td>"+esc(r.scanner)+"</td><td>"+esc(r.brand)+"</td>"+
+    tr.innerHTML="<td>"+r.ts+"</td><td>"+esc(r.scanner)+"</td><td>"+esc(r.brand)+"</td><td>"+esc(r.flavor||"")+"</td>"+
       "<td>"+esc(r.item)+"</td><td>"+esc(r.lot)+"</td><td>"+esc(r.bestBy)+"</td>"+
       "<td>"+r.p+"</td><td>"+r.r+"</td><td>"+r.c+flag+"</td><td><b>"+fmt(r.cans)+"</b></td>"+
       "<td>"+esc(r.loc)+"</td>"+
@@ -743,11 +839,11 @@ function renderTable(){
     tb.appendChild(tr);
   });
   if(!rows.length)
-    tb.innerHTML="<tr><td colspan='12' style='text-align:center;color:var(--dim);padding:20px'>No rows yet.<br><br>"+
+    tb.innerHTML="<tr><td colspan='13' style='text-align:center;color:var(--dim);padding:20px'>No rows yet.<br><br>"+
       "<button class='btn sm' style='max-width:280px;margin:0 auto' onclick=\"document.querySelector('[data-t=tab-scan]').click()\">GO TO SCAN</button><br>"+
       "<button class='btn ghost sm' style='max-width:280px;margin:8px auto 0' onclick=\"document.querySelector('[data-t=tab-count]').click()\">GO TO COUNT</button></td></tr>";
   else if(!v.length)
-    tb.innerHTML="<tr><td colspan='12' style='text-align:center;color:var(--dim);padding:20px'>No rows match the filter.</td></tr>";
+    tb.innerHTML="<tr><td colspan='13' style='text-align:center;color:var(--dim);padding:20px'>No rows match the filter.</td></tr>";
   $("tRows").textContent=rows.length;
   $("tPallets").textContent=fmt(pallets);
   $("tCans").textContent=fmt(cans);
@@ -758,7 +854,7 @@ function renderTable(){
   tb.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
     const i=+b.dataset.i;
     if(b.dataset.a==="edit"){ const r=rows[i];
-      openConfirm({brandId:r.brandId||brandIdByName(r.brand), item:r.item, lot:r.lot,
+      openConfirm({brandId:r.brandId||brandIdByName(r.brand), flavor:r.flavor, item:r.item, lot:r.lot,
         bestBy:r.bestBy, date:r.date, p:r.p, r:r.r, cases:r.c, pack:r.pack,
         loc:r.loc, notes:r.notes, found:{item:1,lot:1}}, i);
       document.querySelector('[data-t="tab-scan"]').click();
@@ -783,10 +879,10 @@ $("btnUndo").addEventListener("click",()=>{
 });
 
 /* ---- CSV / JSON ---- */
-const CSV_HEAD=["Timestamp","Scanner","Brand","Item/Code","Lot","Best By","Label Date","Case Pack","Pallets","Rows","Cases","Total Cans","Location","Notes"];
+const CSV_HEAD=["Timestamp","Scanner","Brand","Flavor","Item/Code","Lot","Best By","Label Date","Case Pack","Pallets","Rows","Cases","Total Cans","Location","Notes"];
 const csvCell=v=>{ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
 function buildCsv(rs){ return CSV_HEAD.join(",")+"\n"+rs.map(r=>
-  [r.ts,r.scanner,r.brand,r.item,r.lot,r.bestBy,r.date,r.pack,r.p,r.r,r.c,r.cans,r.loc,r.notes]
+  [r.ts,r.scanner,r.brand,r.flavor||"",r.item,r.lot,r.bestBy,r.date,r.pack,r.p,r.r,r.c,r.cans,r.loc,r.notes]
   .map(csvCell).join(",")).join("\n"); }
 function dl(name, text, type){ const blob=new Blob([text],{type:type});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
@@ -837,7 +933,7 @@ function parseCsv(text){
     const b=brandById(brandIdByName(g("brand")));
     const P=+g("pallets")||0,R=+g("rows")||0,C=+g("cases")||0,pack=+g("case pack")||b.c;
     out.push({ts:g("timestamp")||stamp(),scanner:g("scanner")||"—",brand:g("brand")||b.name,
-      brandId:b.id,item:g("item/code"),lot:g("lot"),bestBy:g("best by"),date:g("label date"),
+      brandId:b.id,flavor:g("flavor"),item:g("item/code"),lot:g("lot"),bestBy:g("best by"),date:g("label date"),
       pack:pack,p:P,r:R,c:C,cans:+g("total cans")||cansFor(b,pack,P,R,C),
       loc:g("location"),notes:g("notes")}); }
   return out; }
