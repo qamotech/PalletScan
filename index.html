@@ -31,7 +31,8 @@ body.lg .btn{min-height:64px;font-size:19px;}
 .qcard{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;animation:tabIn .25s ease;}
 .qcard .qh{display:flex;gap:10px;align-items:center;margin-bottom:8px;}
 .qcard .qh img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex:none;}
-.qcard .fld{display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-bottom:1px dashed var(--line);}
+.qcard .fldedit{background:#0a0e14;border:1px solid var(--acc);color:#fff;border-radius:6px;padding:4px 8px;font-size:14px;width:150px;}
+.fld{display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-bottom:1px dashed var(--line);}
 .qcard .fld b{color:var(--dim);font-weight:normal;flex:none;}
 .qcard .fld span{text-align:right;word-break:break-word;}
 .qcard .fld span.miss{color:#f59e0b;}
@@ -193,7 +194,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 <!-- ============ SCAN TAB ============ -->
 <section class="tab on" id="tab-scan">
   <div class="card">
-    <h2>1 &mdash; Capture pallet label</h2>
+    <h2>📷 1 &mdash; Capture pallet label</h2>
     <div class="seg" id="scanModes">
       <button data-m="photo" class="on">Photo + OCR</button>
       <button data-m="manual">Manual</button>
@@ -207,7 +208,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
         <button class="btn ghost sm" id="btnTorch" style="margin-top:8px">TORCH: OFF</button>
         <button class="btn ghost sm" id="btnFlipCam" style="margin-top:8px">FLIP CAMERA</button>
       </div>
-      <button class="btn" id="btnStartScan">START SCANNER</button>
+      <button class="btn" id="btnStartScan">📷 START SCANNER</button>
       <button class="btn ghost hidden" id="btnStopScan">STOP SCANNER</button>
       <div class="toggle" id="rapidToggle"><span class="sw"></span><span>Rapid-scan mode: decoded barcodes auto-add as 1 pallet, no confirm screen. <b id="rapidCount"></b></span></div>
       <div class="note" style="margin-top:8px">Normal mode: decoded value drops into the Lot / Code field for confirmation.</div>
@@ -221,15 +222,26 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       </div>
       <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden">
       <button class="btn shutter" id="btnTakePhoto">📷 TAKE LABEL PHOTO</button>
+      <button class="btn" id="btnLiveScan" style="margin-top:10px;border-color:var(--warn)">🔴 LIVE SCAN</button>
+      <div id="liveWrap" class="hidden" style="margin-top:10px">
+        <div style="position:relative;background:#000;border-radius:12px;overflow:hidden;border:1px solid var(--line)">
+          <video id="liveVideo" playsinline muted style="width:100%;display:block;max-height:52vh;object-fit:cover;background:#000"></video>
+          <div id="liveCheck" style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.75);border:1px solid var(--acc);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.7"></div>
+        </div>
+        <div class="note" id="liveFrames" style="margin-top:6px">frames tried: 0 — point at the label 🎯</div>
+        <button class="btn ghost" id="btnLiveStop" style="margin-top:8px">■ STOP</button>
+      </div>
+      <canvas id="liveCanvas" class="hidden"></canvas>
       <div class="toggle on" id="rapidPhotoToggle"><span class="sw"></span><span>Rapid capture: tap-tap-tap photos, then process as a batch. <b id="rapidPhotoCount"></b></span></div>
       <div id="filmstrip" class="filmstrip hidden"></div>
       <button class="btn ok hidden" id="btnProcessQueue" style="margin-top:10px">⚙ PROCESS QUEUE (<span id="queueN">0</span>)</button>
       <button class="btn ok hidden" id="btnConfirmAll" style="margin-top:10px">✓ CONFIRM ALL</button>
       <div class="prog hidden" id="queueProg"><i></i></div>
       <div class="note" id="queueNote" style="margin-top:8px"></div>
+
       <div id="queueResults"></div>
       <div class="row2">
-        <button class="btn ok hidden" id="btnRunOcr" style="margin-top:10px">READ TEXT FROM PHOTO</button>
+        <button class="btn ok hidden" id="btnRunOcr" style="margin-top:10px">🔍 READ TEXT FROM PHOTO</button>
         <button class="btn ghost hidden" id="btnRetake" style="margin-top:10px">RETAKE</button>
       </div>
       <div class="prog hidden" id="ocrProg"><i></i></div>
@@ -280,7 +292,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 <!-- ============ COUNT TAB ============ -->
 <section class="tab" id="tab-count">
   <div class="card">
-    <h2>Quick count &mdash; merged counter</h2>
+    <h2>🔢 Quick count &mdash; merged counter</h2>
     <div class="note" style="margin-bottom:6px">Same P / R / C math as your cyber-count sheets. Tap (or hold) to count, LOG COUNT drops it in the table.</div>
     <label class="f">Brand</label><select id="cBrand"></select>
     <div class="note specinfo" id="cSpecInfo"></div>
@@ -300,7 +312,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <div><label class="f">Location</label><input type="text" id="cLoc" placeholder="e.g. B-04-1" autocomplete="off"></div>
       <div><label class="f">Lot (optional)</label><input type="text" id="cLot" placeholder="lot code" autocomplete="off"></div>
     </div>
-    <button class="btn ok" id="btnLogCount">LOG COUNT</button>
+    <button class="btn ok" id="btnLogCount">✅ LOG COUNT</button>
     <button class="btn ghost sm" id="btnResetCount">Reset counters</button>
   </div>
 </section>
@@ -308,7 +320,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 <!-- ============ TABLE TAB ============ -->
 <section class="tab" id="tab-table">
   <div class="card">
-    <h2>Count table</h2>
+    <h2>📋 Count table</h2>
     <div class="filterbar">
       <input type="text" id="fltQ" placeholder="Filter: lot, item, location…" autocomplete="off">
       <select id="fltBrand"><option value="">All brands</option></select>
@@ -328,7 +340,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <div class="tot"><div class="k">Pallets</div><div class="v" id="tPallets">0</div></div>
       <div class="tot"><div class="k">Total cans</div><div class="v" id="tCans">0</div></div>
     </div>
-    <button class="btn" id="btnCsv">DOWNLOAD CSV</button>
+    <button class="btn" id="btnCsv">📥 DOWNLOAD CSV</button>
     <div class="row2">
       <button class="btn ghost sm" id="btnCopy">Copy CSV</button>
       <button class="btn ghost sm" id="btnJson">Backup JSON</button>
@@ -345,9 +357,9 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 <!-- ============ SUMMARY TAB ============ -->
 <section class="tab" id="tab-sum">
   <div class="card">
-    <h2>Session summary</h2>
+    <h2>📊 Session summary</h2>
     <div class="note" id="sessInfo" style="margin-bottom:8px"></div>
-    <div id="sumBody"><div class="note">Nothing counted yet.</div></div>
+    <div id="sumBody"><div class="note" style="text-align:center;padding:14px"><div style="font-size:40px">📦</div>Nothing counted yet.<br><span style="font-size:12px">Scan a label or tap + to get rolling 🚀</span></div></div>
     <div class="totbar">
       <div class="tot"><div class="k">Grand total cans</div><div class="v" id="sCans">0</div></div>
       <div class="tot"><div class="k">Grand total pallets</div><div class="v" id="sPallets">0</div></div>
@@ -369,10 +381,10 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 </section>
 
 <nav class="tabs">
-  <button data-t="tab-scan" class="on">SCAN</button>
-  <button data-t="tab-count">COUNT</button>
-  <button data-t="tab-table">TABLE<span class="badge" id="tabBadge"></span></button>
-  <button data-t="tab-sum">SUMMARY</button>
+  <button data-t="tab-scan" class="on">📷 SCAN</button>
+  <button data-t="tab-count">🔢 COUNT</button>
+  <button data-t="tab-table">📋 TABLE<span class="badge" id="tabBadge"></span></button>
+  <button data-t="tab-sum">📊 SUMMARY</button>
 </nav>
 <div id="toast"></div>
 <div id="undoToast"><span id="undoMsg">Row deleted</span><button id="btnUndo">UNDO</button></div>
@@ -408,6 +420,11 @@ const BRANDS = [
 const ITEM_CODES = ["VP","RWB","OV","RS","LL","SL","Cola","Raspberry Rose","CL",
   "KiwiGuava","Watermelon","Orange","Berry","Peach","Tropical"];
 const brandById = id => BRANDS.find(b=>b.id===id) || BRANDS[BRANDS.length-1];
+function brandIcon(b){ if(!b) return "\U0001F4E6"; const c=(b.category||"").toLowerCase();
+  if(c.includes("soda")) return "\U0001F964"; if(c.includes("energy")) return "\u26A1";
+  if(c.includes("iced tea")) return "\U0001F351"; if(c.includes("juice")) return "\U0001F9C3";
+  if(c.includes("flavored water")) return "\U0001F4A7"; if(c.includes("sparkling")) return "\U0001FAA7";
+  return "\U0001F4E6"; }
 /* Pack-aware math: custom case pack rescales pallet & row can values */
 const casesPerPallet = b => Math.max(1, Math.round(b.p / b.c));
 const casesPerRow    = b => Math.max(1, Math.round(casesPerPallet(b) / b.rpp));
@@ -629,19 +646,29 @@ function rowFromParsed(p){
     pack:pack, p:P, r:R, c:C, cans:cansFor(b,pack,P,R,C),
     loc:lastLoc(), notes:(p.sap?("SAP "+p.sap):"")};
 }
-function renderQCard(q,i){
+function renderQCard(q,i,refNode){
   const p=q.parsed||{};
   const b=brandById(p.brandId)||brandById("other");
   const card=document.createElement("div"); card.className="qcard"; card.id="qcard"+i;
-  const fld=(label,val)=>'<div class="fld"><b>'+label+'</b><span class="'+(val?"":"miss")+'">'+(val||"—")+'</span></div>';
+  const fld=(label,val,key)=>{
+    const miss=!val;
+    const ed=(miss&&(key==="bestBy"||key==="date"))?(' data-fedit="'+key+'" data-qi="'+i+'" style="cursor:pointer;text-decoration:underline dotted" title="Tap to type it in"'):"";
+    return '<div class="fld"><b>'+label+'</b><span class="'+(miss?"miss":"")+'"'+ed+'>'+(val||"—")+'</span></div>';
+  };
   card.innerHTML='<div class="qh"><img src="'+q.url+'"><div><div style="font-size:16px"><b>'
-    +b.name+'</b></div><div class="note">'+(p.flavor||"flavor not found")+'</div></div></div>'
-    +fld("Item / Code",p.item)+fld("Lot",p.lot)+fld("Best By",p.bestBy)+fld("Label Date",p.date)
-    +fld("Case Pack",p.pack||b.c)+fld("Pallets",(p.p!=null?p.p:1))
+    +brandIcon(b)+' '+b.name+'</b></div><div class="note">'+(p.flavor||"flavor not found")+'</div></div></div>'
+    +fld("🏷️ Item / Code",p.item)+fld("🔖 Lot",p.lot)+fld("📅 Best By",p.bestBy,"bestBy")+fld("🗓️ Label Date",p.date,"date")
+    +fld("📦 Case Pack",p.pack||b.c)+fld("🏭 Pallets",(p.p!=null?p.p:1))+fld("📐 Rows",(p.r!=null?p.r:0))+fld("🔢 Cases",(p.cases!=null?p.cases:(p.c||0)))
     +(p.error?'<div class="fld"><b>Error</b><span class="miss">'+p.error+'</span></div>':"")
     +'<div class="qbtns"><button class="btn ok" data-qc="'+i+'">✓ CONFIRM</button>'
     +'<button class="btn ghost" data-qe="'+i+'">✎ EDIT</button></div>';
-  $("queueResults").appendChild(card);
+  if(refNode&&refNode.parentNode) refNode.parentNode.insertBefore(card,refNode); else $("queueResults").appendChild(card);
+}
+function refreshQCard(i){
+  const old=$("qcard"+i); if(!old) return;
+  const q=photoQueue[i]; if(!q) return;
+  const ref=old.nextSibling; old.remove();
+  renderQCard(q,i,ref);
 }
 function confirmQueueCard(i,silent){
   const q=photoQueue[i]; if(!q||!q.parsed||q.saved) return;
@@ -691,6 +718,25 @@ $("btnConfirmAll").addEventListener("click",()=>{
   $("btnConfirmAll").classList.add("hidden");
 });
 document.addEventListener("click",e=>{
+  const fe=e.target.closest("[data-fedit]");
+  if(fe){
+    const qi=+fe.dataset.qi, key=fe.dataset.fedit, q=photoQueue[qi];
+    if(!q||!q.parsed) return;
+    const inp=document.createElement("input");
+    inp.value=q.parsed[key]||""; inp.className="fldedit";
+    inp.placeholder=key==="bestBy"?"\U0001F4C5 Type best-by (MM/DD/YYYY)":"\U0001F5D3\uFE0F Type date (MM/DD/YYYY)";
+    inp.setAttribute("inputmode","numeric");
+    fe.replaceWith(inp); inp.focus();
+    let done=false;
+    const save=ok=>{ if(done) return; done=true;
+      if(ok){ const v=inp.value.trim(); q.parsed[key]=v; if(v) q.parsed.found[key]=true; }
+      refreshQCard(qi); };
+    inp.addEventListener("blur",()=>save(true));
+    inp.addEventListener("keydown",ev=>{ if(ev.key==="Enter") save(true); if(ev.key==="Escape") save(false); });
+    return;
+  }
+});
+document.addEventListener("click",e=>{
   const qc=e.target.closest("[data-qc]"), qe=e.target.closest("[data-qe]");
   if(qc){ confirmQueueCard(parseInt(qc.dataset.qc,10)); return; }
   if(qe){
@@ -720,17 +766,25 @@ $("btnRunOcr").addEventListener("click",async()=>{
 });
 
 /* ---- Label text parser (tuned for your ALDI-style pallet labels) ---- */
+function validDateish(d){
+  if(/^\d{8}$/.test(d)){ const mo=+d.slice(0,2), dy=+d.slice(2,4);
+    return mo>=1&&mo<=12&&dy>=1&&dy<=31; }
+  return true;
+}
 function parseLabel(text){
   const t=text.replace(/\r/g,"\n"), up=t.toUpperCase(), out={raw:text, found:{}};
   const grab=(re,key)=>{ const m=t.match(re); const v=m?(m[1]||m[0]).trim():"";
     if(v&&key) out.found[key]=true; return v; };
   out.lot   = grab(/LOT[:\s#]*([A-Z0-9-]{5,})/i,"lot") || grab(/\b([A-Z]\d{2,}[A-Z0-9]{4,})\b/,"lot");
-  out.bestBy= grab(/BEST\s*BY[:\s]*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})/i,"bestBy");
-  const dates=[...t.matchAll(/(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})/g)].map(m=>m[1]);
-  out.date  = dates.find(d=>d!==out.bestBy)||"";
-  if(out.date) out.found.date=true;
-  const cases=grab(/CASES[:\s]*(\d{1,4})/i,"cases");
-  if(cases) out.cases=parseInt(cases,10);
+  const DP=["\\d{1,2}[\\/\\-.]\\d{1,2}[\\/\\-.]\\d{2,4}","\\d{8}","\\d{1,2}-[A-Za-z]{3}-\\d{2,4}","\\d{4}-\\d{1,2}-\\d{1,2}"].join("|");
+  const bbM=t.match(new RegExp("(?:BEST\\s*(?:BY|BEFORE)|\\bBB\\b|\\bEXP(?:IRY|IRATION)?\\b|USE\\s*BY)\\s*[:\\s]*("+DP+")","i"));
+  out.bestBy=bbM?bbM[1].trim():""; if(out.bestBy) out.found.bestBy=true;
+  const allD=[...t.matchAll(new RegExp("("+DP+")","gi"))].map(m=>m[1]).filter(d=>d!==out.bestBy&&validDateish(d));
+  out.date=allD[0]||""; if(out.date) out.found.date=true;
+  const cP=t.match(/(\d{1,3})\s*pallets?/i); if(cP){ out.p=parseInt(cP[1],10); out.found.p=true; }
+  const cR=t.match(/(\d{1,3})\s*rows?/i);     if(cR){ out.r=parseInt(cR[1],10); out.found.r=true; }
+  const cC=t.match(/(\d{1,4})\s*cases?/i)||t.match(/cases?\s*[:]\s*(\d{1,4})/i);
+  if(cC){ out.cases=parseInt(cC[1],10); out.found.cases=true; }
   const pack=grab(/CASE\s*PACK[:\s]*(\d{1,3})/i,"pack") || grab(/(\d{1,3})\s*[- ]?PACK/i,"pack");
   if(pack) out.pack=parseInt(pack,10);
   const sap=grab(/SAP[:\s]*([A-Z0-9]{4,})/i); if(sap){ out.sap=sap; out.found.sap=true; }
@@ -750,7 +804,7 @@ function parseLabel(text){
 const brandSel=$("fBrand"), cBrandSel=$("cBrand");
 BRANDS.forEach(b=>{ for(const s of [brandSel,cBrandSel]){
   const o=document.createElement("option"); o.value=b.id;
-  o.textContent=b.name+" — "+b.spec; s.appendChild(o); } });
+  o.textContent=brandIcon(b)+" "+b.name+" — "+b.spec; s.appendChild(o); } });
 /* ---- flavors, spec info, item-code suggestions ---- */
 function prcBadge(b){ return "P "+fmt(b.p)+" · R "+fmt(Math.round(b.p/b.rpp))+" · C "+b.c; }
 function fillFlavors(selId,chipsId,brandId){
@@ -768,7 +822,7 @@ function markChip(chipsId,val){ const ch=$(chipsId); if(!ch) return;
   ch.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.textContent===val)); }
 function showSpecInfo(elId,brandId){
   const b=brandById(brandId);
-  $(elId).innerHTML="<b style='color:var(--acc)'>"+esc(b.spec)+"</b> · "+esc(b.category||"")+
+  $(elId).innerHTML=brandIcon(b)+" <b style='color:var(--acc)'>"+esc(b.spec)+"</b> · "+esc(b.category||"")+
     " <span class='prcbadge'>"+prcBadge(b)+"</span>";
 }
 function syncItemCodes(brandId){
@@ -789,14 +843,14 @@ function onBrandChange(which){
   }
 }
 const fltBrand=$("fltBrand");
-BRANDS.forEach(b=>{ const o=document.createElement("option"); o.value=b.name; o.textContent=b.name; fltBrand.appendChild(o); });
+BRANDS.forEach(b=>{ const o=document.createElement("option"); o.value=b.name; o.textContent=brandIcon(b)+" "+b.name; fltBrand.appendChild(o); });
 $("itemCodes").innerHTML = ITEM_CODES.map(c=>"<option value='"+esc(c)+"'>").join("");
 let editingIndex=-1, dupArmed=false, lastLocCache="";
 function lastLoc(){ return lastLocCache || ""; }
 function openConfirm(p, idx){
   editingIndex=(idx==null?-1:idx); dupArmed=false;
   const card=$("confirm-card"); card.classList.remove("hidden");
-  $("confirmTitle").innerHTML = editingIndex>=0 ? "2 — Edit row" : "2 — Confirm transcription";
+  $("confirmTitle").innerHTML = editingIndex>=0 ? "✏️ 2 — Edit row" : "✅ 2 — Confirm transcription";
   $("btnConfirm").textContent = editingIndex>=0 ? "SAVE CHANGES" : "CONFIRM & ADD TO TABLE";
   $("btnConfirm").classList.remove("armed");
   const raw=$("ocrRaw");
@@ -1103,7 +1157,7 @@ function renderSummary(){
     l.rows++; l.cans+=r.cans; });
   const names=Object.keys(by).sort((a,b)=>by[b].cans-by[a].cans);
   $("sumBody").innerHTML=names.length? names.map(n=>
-    "<div class='sumrow'><span>"+esc(n)+" <small style='color:var(--dim)'>"+by[n].rows+" rows</small></span>"+
+    "<div class='sumrow'><span>"+esc(n)+" <small style='color:var(--dim)'>"+by[n].rows+" tags</small></span>"+
     "<b>"+fmt(by[n].cans)+" cans · "+fmt(by[n].pallets)+" plt</b></div>").join("")
     : "<div class='note'>Nothing counted yet.</div>";
   const ln=Object.keys(loc).sort((a,b)=>loc[b].cans-loc[a].cans);
@@ -1136,6 +1190,106 @@ if(!window.isSecureContext){
   n.innerHTML="<h2>Camera note</h2><div class='note'>This page was opened over an insecure connection, so the phone camera is blocked by the browser. Host the file on HTTPS (e.g. GitHub Pages) to enable scanning — manual entry and counting work fine regardless.</div>";
   $("tab-scan").prepend(n);
 }
+
+
 </script>
+<script>
+/* ================= LIVE SCAN ================= */
+let liveOn=false, liveBusy=false, liveFrames=0, liveMerged=null, liveTimer=null, liveStream=null, liveLastUrl="";
+const LIVE_FIELDS=[["brand","Brand"],["flavor","Flavor"],["lot","Lot"],["bestBy","Best By"],["date","Date"],["pack","Case Pack"]];
+const LIVE_EMOJI={brand:"\U0001F3ED",flavor:"\U0001F351",lot:"\U0001F516",bestBy:"\U0001F4C5",date:"\U0001F5D3\uFE0F",pack:"\U0001F4E6"};
+function liveGot(f){
+  if(!liveMerged) return false;
+  if(f==="brand") return !!(liveMerged.brandId&&liveMerged.brandId!=="other");
+  if(f==="pack") return liveMerged.pack!=null;
+  return !!liveMerged[f];
+}
+function liveVal(k){
+  if(!liveMerged) return "";
+  if(k==="brand"){ const b=brandById(liveMerged.brandId); return b?b.name:""; }
+  if(k==="pack") return liveMerged.pack!=null?String(liveMerged.pack):"";
+  return liveMerged[k]||"";
+}
+function renderLiveCheck(){
+  const n=LIVE_FIELDS.filter(function(x){return liveGot(x[0]);}).length;
+  $("liveCheck").innerHTML=LIVE_FIELDS.map(function(x){
+    const k=x[0],l=x[1];
+    return "<div>"+(liveGot(k)?"\u2705":"\u2B1C")+" "+(LIVE_EMOJI[k]||"")+" "+l+(liveGot(k)?' <small style="color:var(--acc)">'+esc(liveVal(k))+"</small>":"")+"</div>";
+  }).join("")+(n===6?'<div style="margin-top:4px;font-size:16px">\U0001F389 All captured!</div>':"");
+}
+async function startLive(){
+  if(typeof Tesseract==="undefined"){ toast("OCR library failed to load \u2014 check internet once, then reload. \U0001F4E1"); return; }
+  try{
+    liveStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});
+  }catch(err){ toast("Camera blocked \u2014 allow camera access and retry. \U0001F4F7"); return; }
+  const v=$("liveVideo"); v.srcObject=liveStream;
+  try{ await v.play(); }catch(e){}
+  liveOn=true; liveBusy=false; liveFrames=0; liveLastUrl="";
+  liveMerged={raw:"",found:{},brandId:"other",flavor:"",lot:"",bestBy:"",date:"",pack:null,p:null,r:null,cases:null,sap:""};
+  $("liveWrap").classList.remove("hidden");
+  $("btnLiveScan").classList.add("hidden");
+  renderLiveCheck(); $("liveFrames").textContent="frames tried: 0 \u2014 point at the label \U0001F3AF";
+  beep(660,0.1);
+  liveTimer=setInterval(liveTick,1500);
+  toast("\U0001F534 Live scan on \u2014 hold steady on the label");
+}
+function liveTick(){
+  if(!liveOn||liveBusy) return;
+  const v=$("liveVideo");
+  if(!v||!v.videoWidth) return;
+  liveBusy=true; liveFrames++;
+  $("liveFrames").textContent="frames tried: "+liveFrames+" \u2014 scanning\u2026 \U0001F50D";
+  (async()=>{
+    try{
+      const c=$("liveCanvas");
+      const s=Math.min(1,1280/Math.max(v.videoWidth,v.videoHeight));
+      c.width=Math.round(v.videoWidth*s); c.height=Math.round(v.videoHeight*s);
+      c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+      const url=c.toDataURL("image/jpeg",0.85);
+      const text=await ocrText(url);
+      if(text&&liveOn){ liveLastUrl=url; mergeLiveFrame(text); }
+    }catch(e){}
+    liveBusy=false;
+    if(liveOn&&LIVE_FIELDS.every(function(x){return liveGot(x[0]);})) stopLive(true);
+  })();
+}
+function mergeLiveFrame(text){
+  const p=parseLabel(text);
+  const b=brandById(p.brandId)||(p.brand&&brandById(p.brand))||brandById("other");
+  const fl=guessFlavor(b.id,text)||p.flavor;
+  let changed=false;
+  if(b.id!=="other"&&liveMerged.brandId==="other"){ liveMerged.brandId=b.id; liveMerged.found.brand=true; changed=true; beep(1040,0.08); }
+  const take=(k,v)=>{ if(v&&!liveGot(k)){ liveMerged[k]=v; liveMerged.found[k]=true; changed=true; beep(1040,0.08); } };
+  take("flavor",fl); take("lot",p.lot); take("bestBy",p.bestBy); take("date",p.date); take("pack",p.pack);
+  if(p.p!=null&&liveMerged.p==null) liveMerged.p=p.p;
+  if(p.r!=null&&liveMerged.r==null) liveMerged.r=p.r;
+  if(p.cases!=null&&liveMerged.cases==null) liveMerged.cases=p.cases;
+  if(p.sap&&!liveMerged.sap) liveMerged.sap=p.sap;
+  liveMerged.raw=(liveMerged.raw?liveMerged.raw+"\n":"")+text;
+  if(changed) renderLiveCheck();
+}
+function stopLive(auto){
+  if(!liveOn) return;
+  liveOn=false;
+  clearInterval(liveTimer); liveTimer=null;
+  if(liveStream){ liveStream.getTracks().forEach(t=>t.stop()); liveStream=null; }
+  const v=$("liveVideo"); if(v) v.srcObject=null;
+  $("liveWrap").classList.add("hidden");
+  $("btnLiveScan").classList.remove("hidden");
+  const q={url:liveLastUrl,parsed:liveMerged,done:true,live:true};
+  const qi=photoQueue.length;
+  photoQueue.push(q);
+  renderQCard(q,qi);
+  $("btnConfirmAll").classList.remove("hidden");
+  const n=LIVE_FIELDS.filter(function(x){return liveGot(x[0]);}).length;
+  beep(auto?1320:880,0.15); buzz(60);
+  toast(auto?"\U0001F389 All 6 fields captured!":"\u23F9 Stopped \u2014 "+n+" of 6 fields captured");
+  setTimeout(()=>{ const card=$("qcard"+qi); if(card) card.scrollIntoView({behavior:"smooth",block:"nearest"}); },150);
+}
+$("btnLiveScan").addEventListener("click",startLive);
+$("btnLiveStop").addEventListener("click",()=>stopLive(false));
+/* =============== END LIVE SCAN =============== */
+</script>
+
 </body>
 </html>
