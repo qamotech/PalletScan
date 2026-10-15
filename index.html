@@ -177,17 +177,52 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 @keyframes slideGlow{to{background-position:200% 0;}}
 @media(min-width:700px){ .row2{grid-template-columns:1fr 1fr 1fr 1fr;} }
 </style>
+<style>
+/* ==== v6: 24 improvements ==== */
+.cdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:6px;vertical-align:middle}
+.cdot.high{background:#22e584;box-shadow:0 0 6px #22e584}
+.cdot.med{background:#ffcf3f;box-shadow:0 0 6px #ffcf3f}
+.cdot.low{background:#ff5d5d;box-shadow:0 0 6px #ff5d5d}
+.qstrip{display:flex;gap:8px;overflow-x:auto;padding:8px 2px;margin-top:8px}
+.qstrip img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer;flex:none}
+.qstrip img.bad{border-color:var(--warn)}
+.qhint{font-size:12px;color:var(--warn);margin-top:6px;min-height:16px}
+.presetrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.presetrow .btn{flex:1;min-width:70px;padding:10px 4px;font-size:14px}
+.tmplrow{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.tmplchip{background:#14202e;border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--txt)}
+.tmplchip:active{transform:scale(.95)}
+#sessTimer,#saveInd{font-size:11px;color:var(--dim);margin-left:8px}
+.recentrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.hdrbtn{background:none;border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:16px;padding:4px 8px;cursor:pointer;margin-left:6px}
+#quotaWrap{display:inline-flex;align-items:center;gap:6px;margin-left:8px;cursor:pointer}
+#quotaRing{transform:rotate(-90deg)}
+#quotaRing .bg{stroke:#1c2940}
+#quotaRing .fg{stroke:#22d3ee;stroke-linecap:round;transition:stroke-dashoffset .6s}
+#streakCt{font-size:13px;margin-left:8px}
+#netDot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:8px;vertical-align:middle}
+#netDot.on{background:#22e584;box-shadow:0 0 6px #22e584}
+#netDot.off{background:#ff5d5d;box-shadow:0 0 6px #ff5d5d}
+.totfoot{font-weight:700;background:#101a29}
+.mark,mark{background:#3a2f00;color:#ffe27a;border-radius:3px;padding:0 2px}
+.selcol{width:34px;text-align:center}
+.selcol input{width:18px;height:18px;accent-color:#22d3ee;cursor:pointer}
+#bulkBar{display:none;gap:8px;margin:8px 0;align-items:center}
+#bulkBar.show{display:flex}
+#sessNotes{width:100%;background:#0d1522;border:1px solid var(--line);border-radius:8px;color:var(--txt);padding:8px;font-size:13px;margin-top:8px;min-height:44px;resize:vertical}
+.dupbtn{margin-left:4px}
+</style>
 </head>
 <body>
 <header>
   <h1>PALLET<span class="cy">SCAN</span> COUNTER</h1>
-  <div class="sub">Scan &middot; Confirm &middot; Count &middot; Export &mdash; <b id="hdrStats">0 rows</b></div>
+  <div class="sub">Scan &middot; Confirm &middot; Count &middot; Export &mdash; <b id="hdrStats">0 rows</b><button class="hdrbtn" id="btnSound" title="Toggle sound">🔊</button><span id="quotaWrap" title="Tap to set daily pallet quota"><svg id="quotaRing" width="26" height="26" viewBox="0 0 26 26"><circle class="bg" cx="13" cy="13" r="10" fill="none" stroke-width="4"/><circle class="fg" id="quotaFg" cx="13" cy="13" r="10" fill="none" stroke-width="4" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg><span id="quotaTxt" style="font-size:11px">0/50</span></span><span id="streakCt" title="Pallets logged today">🔥 0</span><span id="netDot" class="on" title="Online status"></span></div>
   <div id="scanner-id">
     <input type="text" id="scannerName" placeholder="Scanner name (e.g. Nate)" autocomplete="off">
   </div>
   <div id="sessionbar">
     <select id="sessionSel" title="Count session"></select>
-    <button id="btnNewSession">+ Session</button>
+    <button id="btnNewSession">+ Session</button><span id="sessTimer" title="Session elapsed time">⏱ 0m</span><span id="saveInd" title="Last saved">💾</span><div class="recentrow" id="recentRow" style="width:100%"></div>
   </div>
 </header>
 
@@ -233,7 +268,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       </div>
       <canvas id="liveCanvas" class="hidden"></canvas>
       <div class="toggle on" id="rapidPhotoToggle"><span class="sw"></span><span>Rapid capture: tap-tap-tap photos, then process as a batch. <b id="rapidPhotoCount"></b></span></div>
-      <div id="filmstrip" class="filmstrip hidden"></div>
+      <div class="qhint" id="photoQHint"></div><div class="qstrip hidden" id="recentStrip" title="Recent photos — tap to reprocess"></div><div id="filmstrip" class="filmstrip hidden"></div>
       <button class="btn ok hidden" id="btnProcessQueue" style="margin-top:10px">⚙ PROCESS QUEUE (<span id="queueN">0</span>)</button>
       <button class="btn ok hidden" id="btnConfirmAll" style="margin-top:10px">✓ CONFIRM ALL</button>
       <div class="prog hidden" id="queueProg"><i></i></div>
@@ -307,7 +342,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <button data-s="R" data-d="-1">&minus;</button><div class="val" id="cR">0</div><button data-s="R" data-d="1">+</button></div>
     <div class="stepper"><div class="lab">CASES<small id="cCInfo"></small></div>
       <button data-s="C" data-d="-1">&minus;</button><div class="val" id="cC">0</div><button data-s="C" data-d="1">+</button></div>
-    <div id="live-total"><div class="n" id="cTotal">0</div><div class="d">TOTAL CANS &middot; <span id="cDetail"></span></div></div>
+    <div class="presetrow" id="presetRow"><button class="btn ghost sm" data-preset="1,0,0">1P</button><button class="btn ghost sm" data-preset="1,1,0">1P+1R</button><button class="btn ghost sm" data-preset="2,0,0">2P</button><button class="btn ghost sm" data-preset="0,0,0" data-half="1">½P</button></div><div class="tmplrow" id="tmplRow"></div><button class="btn ghost sm" id="btnSaveTmpl" style="margin-bottom:8px">💾 Save as template</button><div id="live-total"><div class="n" id="cTotal">0</div><div class="d">TOTAL CANS &middot; <span id="cDetail"></span></div></div>
     <div class="row2">
       <div><label class="f">Location</label><input type="text" id="cLoc" placeholder="e.g. B-04-1" autocomplete="off"></div>
       <div><label class="f">Lot (optional)</label><input type="text" id="cLot" placeholder="lot code" autocomplete="off"></div>
@@ -325,17 +360,18 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <input type="text" id="fltQ" placeholder="Filter: lot, item, location…" autocomplete="off">
       <select id="fltBrand"><option value="">All brands</option></select>
     </div>
-    <div class="tblwrap"><table class="grid" id="grid">
+    <div id="bulkBar"><button class="btn ghost sm" id="btnDelSel">🗑 Delete selected (<span id="selN">0</span>)</button><button class="btn ghost sm" id="btnSelAll">Select all</button><button class="btn ghost sm" id="btnSelNone">Clear</button></div><div class="tblwrap"><table class="grid" id="grid">
       <thead><tr>
-        <th data-k="ts">Time</th><th data-k="scanner">Scanner</th><th data-k="brand">Brand</th><th data-k="flavor">Flavor</th>
+        <th class="selcol"><input type="checkbox" id="selAll" title="Select all"></th><th data-k="ts">Time</th><th data-k="scanner">Scanner</th><th data-k="brand">Brand</th><th data-k="flavor">Flavor</th>
         <th data-k="item">Item</th><th data-k="lot">Lot</th><th data-k="bestBy">Best&nbsp;By</th>
         <th data-k="p">P</th><th data-k="r">R</th><th data-k="c">C</th>
         <th data-k="cans">Cans</th><th data-k="loc">Loc</th><th></th>
       </tr></thead>
       <tbody id="gridBody"></tbody>
+    <tfoot id="gridFoot" class="totfoot"></tfoot>
     </table></div>
     <div class="note" style="margin-top:6px">Tap a column header to sort. <span class="flag">⚠</span> = cases exceed a full pallet — recount as pallets.</div>
-    <div class="totbar">
+    <textarea id="sessNotes" placeholder="📝 Session notes (e.g. aisle, shift, issues)…"></textarea><div class="totbar">
       <div class="tot"><div class="k">Rows</div><div class="v" id="tRows">0</div></div>
       <div class="tot"><div class="k">Pallets</div><div class="v" id="tPallets">0</div></div>
       <div class="tot"><div class="k">Total cans</div><div class="v" id="tCans">0</div></div>
@@ -444,7 +480,9 @@ if(!state || !Array.isArray(state.sessions)){
 }
 const S = () => state.sessions.find(s=>s.id===state.activeId) || state.sessions[0];
 let rows = S().rows;
-const save = () => { try{ localStorage.setItem(LS_V2, JSON.stringify(state)); }catch(e){} };
+const save = () => { try{ localStorage.setItem(LS_V2, JSON.stringify(state)); }catch(e){}
+  try{ const si=document.getElementById("saveInd"); if(si){ const d=new Date(); si.textContent="💾 "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0"); } }catch(e){}
+  save._n=(save._n||0)+1; if(save._n%10===0&&navigator.storage&&navigator.storage.estimate){ navigator.storage.estimate().then(es=>{ const pc=(es.usage||0)/Math.max(1,(es.quota||1)); if(pc>0.8) toast("⚠️ Storage "+Math.round(pc*100)+"% full — export CSV soon"); }).catch(()=>{}); } };
 const settings = () => (state.settings = state.settings || {});
 const scanner = () => (document.getElementById("scannerName").value||"").trim();
 
@@ -461,7 +499,8 @@ function toast(msg){ const t=$("toast"); t.textContent=msg; t.style.display="blo
   clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none",2200); }
 /* audio + haptics */
 let AC=null;
-function beep(f,d){ f=f||880; d=d||0.12;
+function sndOn(){ try{ return settings().sound!==false; }catch(e){ return true; } }
+function beep(f,d){ if(!sndOn()) return; f=f||880; d=d||0.12;
   try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)();
     if(AC.state==="suspended") AC.resume();
     const o=AC.createOscillator(), g=AC.createGain();
@@ -471,6 +510,7 @@ function beep(f,d){ f=f||880; d=d||0.12;
     o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+d);
   }catch(e){} }
 function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||60); }catch(e){} }
+function buzzPat(n){ const P={success:[40,30,40],error:[90,50,90,50,90],tick:18,field:[25],done:[60,40,120]}; try{ if(navigator.vibrate&&P[n]) navigator.vibrate(P[n]); }catch(e){} }
 /* shorthand: "3p 2r 5c", "107p,+1p" */
 function parseShort(s){ const out={P:0,R:0,C:0}; if(!s) return out;
   const mP=s.match(/(\d+)\s*p/gi), mR=s.match(/(\d+)\s*r/gi), mC=s.match(/(\d+)\s*c/gi);
@@ -607,7 +647,7 @@ $("photoInput").addEventListener("change",e=>{
   const url=URL.createObjectURL(f);
   if(rapidPhoto){
     photoQueue.push({url:url, done:false, parsed:null, saved:false});
-    renderFilmstrip(); buzz(60); beep(880,0.08);
+    renderFilmstrip(); buzz(60); beep(880,0.08); pushRecent(url); analyzePhoto(url).then(function(q){ qualityHint(q); var th=$("filmstrip").lastChild; if(th&&(q.glare||q.blurry)) th.classList.add("bad"); });
     e.target.value="";
     return;
   }
@@ -650,14 +690,14 @@ function renderQCard(q,i,refNode){
   const p=q.parsed||{};
   const b=brandById(p.brandId)||brandById("other");
   const card=document.createElement("div"); card.className="qcard"; card.id="qcard"+i;
-  const fld=(label,val,key)=>{
+  const fld=(label,val,key,cf)=>{ const dot=(cf&&p.conf&&p.conf[key])?'<span class="cdot '+p.conf[key]+'" title="OCR: '+p.conf[key]+'"></span>':'';
     const miss=!val;
     const ed=(miss&&(key==="bestBy"||key==="date"))?(' data-fedit="'+key+'" data-qi="'+i+'" style="cursor:pointer;text-decoration:underline dotted" title="Tap to type it in"'):"";
-    return '<div class="fld"><b>'+label+'</b><span class="'+(miss?"miss":"")+'"'+ed+'>'+(val||"—")+'</span></div>';
+    return '<div class="fld"><b>'+label+'</b><span class="'+(miss?"miss":"")+'"'+ed+'>'+(val||"—")+dot+'</span></div>';
   };
   card.innerHTML='<div class="qh"><img src="'+q.url+'"><div><div style="font-size:16px"><b>'
     +brandIcon(b)+' '+b.name+'</b></div><div class="note">'+(p.flavor||"flavor not found")+'</div></div></div>'
-    +fld("🏷️ Item / Code",p.item)+fld("🔖 Lot",p.lot)+fld("📅 Best By",p.bestBy,"bestBy")+fld("🗓️ Label Date",p.date,"date")
+    +fld("🏷️ Item / Code",p.item,"item",1)+fld("🔖 Lot",p.lot,"lot",1)+fld("📅 Best By",p.bestBy,"bestBy",1)+fld("🗓️ Label Date",p.date,"date",1)
     +fld("📦 Case Pack",p.pack||b.c)+fld("🏭 Pallets",(p.p!=null?p.p:1))+fld("📐 Rows",(p.r!=null?p.r:0))+fld("🔢 Cases",(p.cases!=null?p.cases:(p.c||0)))
     +(p.error?'<div class="fld"><b>Error</b><span class="miss">'+p.error+'</span></div>':"")
     +'<div class="qbtns"><button class="btn ok" data-qc="'+i+'">✓ CONFIRM</button>'
@@ -693,7 +733,7 @@ $("btnProcessQueue").addEventListener("click",async()=>{
     if(thumbs[i]) thumbs[i].classList.add("proc");
     try{
       const text=await ocrText(q.url,p=>{ bar.style.width=Math.round((i+p)/total*100)+"%"; });
-      q.done=true;
+      q.done=true; if(text.split(/\s+/).filter(Boolean).length<3) q.lowText=true;
       q.parsed=text?parseLabel(text):{raw:"",found:{}};
       const b=brandById(q.parsed.brandId)||(q.parsed.brand&&brandById(q.parsed.brand))||brandById("other");
       q.parsed.brandId=b.id; q.parsed.flavor=guessFlavor(b.id,text);
@@ -704,7 +744,7 @@ $("btnProcessQueue").addEventListener("click",async()=>{
     }catch(err){ q.parsed={raw:"",found:{},error:String(err.message||err)}; renderQCard(q,i); }
   }
   bar.style.width="100%";
-  $("queueNote").textContent=total+" photo"+(total>1?"s":"")+" processed — confirm each card, edit as needed, or confirm all.";
+  if(photoQueue.some(function(q){return q.lowText})){ $("queueNote").textContent="\u0001F4D0 Some photos had almost no text \u2014 try rotating labels upright. "; } $("queueNote").textContent=total+" photo"+(total>1?"s":"")+" processed — confirm each card, edit as needed, or confirm all.";
   $("btnConfirmAll").classList.remove("hidden");
   setTimeout(()=>prog.classList.add("hidden"),600);
   renderFilmstrip();
@@ -772,20 +812,20 @@ function validDateish(d){
   return true;
 }
 function parseLabel(text){
-  const t=text.replace(/\r/g,"\n"), up=t.toUpperCase(), out={raw:text, found:{}};
-  const grab=(re,key)=>{ const m=t.match(re); const v=m?(m[1]||m[0]).trim():"";
-    if(v&&key) out.found[key]=true; return v; };
-  out.lot   = grab(/LOT[:\s#]*([A-Z0-9-]{5,})/i,"lot") || grab(/\b([A-Z]\d{2,}[A-Z0-9]{4,})\b/,"lot");
+  const t=text.replace(/\r/g,"\n"), up=t.toUpperCase(), out={raw:text, found:{}, conf:{}};
+  const grab=(re,key,conf)=>{ const m=t.match(re); const v=m?(m[1]||m[0]).trim():"";
+    if(v&&key){ out.found[key]=true; out.conf[key]=conf||"med"; } return v; };
+  out.lot   = grab(/LOT[:\s#]*([A-Z0-9-]{5,})/i,"lot","high") || grab(/\b([A-Z]\d{2,}[A-Z0-9]{4,})\b/,"lot","low");
   const DP=["\\d{1,2}[\\/\\-.]\\d{1,2}[\\/\\-.]\\d{2,4}","\\d{8}","\\d{1,2}-[A-Za-z]{3}-\\d{2,4}","\\d{4}-\\d{1,2}-\\d{1,2}"].join("|");
   const bbM=t.match(new RegExp("(?:BEST\\s*(?:BY|BEFORE)|\\bBB\\b|\\bEXP(?:IRY|IRATION)?\\b|USE\\s*BY)\\s*[:\\s]*("+DP+")","i"));
-  out.bestBy=bbM?bbM[1].trim():""; if(out.bestBy) out.found.bestBy=true;
+  out.bestBy=bbM?bbM[1].trim():""; if(out.bestBy){ out.found.bestBy=true; out.conf.bestBy="high"; }
   const allD=[...t.matchAll(new RegExp("("+DP+")","gi"))].map(m=>m[1]).filter(d=>d!==out.bestBy&&validDateish(d));
-  out.date=allD[0]||""; if(out.date) out.found.date=true;
+  out.date=allD[0]||""; if(out.date){ out.found.date=true; out.conf.date="med"; }
   const cP=t.match(/(\d{1,3})\s*pallets?/i); if(cP){ out.p=parseInt(cP[1],10); out.found.p=true; }
   const cR=t.match(/(\d{1,3})\s*rows?/i);     if(cR){ out.r=parseInt(cR[1],10); out.found.r=true; }
   const cC=t.match(/(\d{1,4})\s*cases?/i)||t.match(/cases?\s*[:]\s*(\d{1,4})/i);
   if(cC){ out.cases=parseInt(cC[1],10); out.found.cases=true; }
-  const pack=grab(/CASE\s*PACK[:\s]*(\d{1,3})/i,"pack") || grab(/(\d{1,3})\s*[- ]?PACK/i,"pack");
+  const pack=grab(/CASE\s*PACK[:\s]*(\d{1,3})/i,"pack","high") || grab(/(\d{1,3})\s*[- ]?PACK/i,"pack","med");
   if(pack) out.pack=parseInt(pack,10);
   const sap=grab(/SAP[:\s]*([A-Z0-9]{4,})/i); if(sap){ out.sap=sap; out.found.sap=true; }
   for(const code of ITEM_CODES){ if(up.includes(code.toUpperCase())){ out.item=code; out.found.item=true; break; } }
@@ -1178,6 +1218,338 @@ $("sizeToggle").addEventListener("click",()=>{ settings().lg=!settings().lg; sav
 function applyWake(){ wlOn=settings().wake!==false;
   $("wakeToggle").classList.toggle("on",wlOn); if(wlOn) keepAwake(); }
 $("wakeToggle").addEventListener("click",()=>{ settings().wake=!wlOn; save(); applyWake(); });
+
+
+/* ================= v6: 24 IMPROVEMENTS ================= */
+
+/* ---- shared helpers ---- */
+function escReg(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function todayKey(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function rowsToday(){
+  const now=new Date(), ky=now.getFullYear(), km=now.getMonth(), kd=now.getDate(), k=todayKey();
+  return rows.filter(r=>{
+    if(r._d) return r._d===k;
+    const d=new Date(r.ts);
+    return !isNaN(d)&&d.getFullYear()===ky&&d.getMonth()===km&&d.getDate()===kd;
+  });
+}
+
+/* ---- #2,#3: photo quality analysis (glare + blur) ---- */
+function analyzePhoto(dataURL){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const w=96, h=Math.max(1,Math.round(96*img.height/img.width));
+        const c=document.createElement("canvas"); c.width=w; c.height=h;
+        const x=c.getContext("2d"); x.drawImage(img,0,0,w,h);
+        const d=x.getImageData(0,0,w,h).data, px=w*h;
+        const g=new Float32Array(px); let bright=0;
+        for(let i=0;i<px;i++){ g[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2]; const b=(d[i*4]+d[i*4+1]+d[i*4+2])/3; if(b>235) bright++; }
+        let lap=0,n=0;
+        for(let y=1;y<h-1;y++) for(let xx=1;xx<w-1;xx++){ const idx=y*w+xx;
+          lap+=Math.abs(4*g[idx]-g[idx-1]-g[idx+1]-g[idx-w]-g[idx+w]); n++; }
+        res({glare:bright/px>0.35, sharp:lap/Math.max(1,n), blurry:(lap/Math.max(1,n))<8});
+      }catch(e){ res({}); }
+    };
+    img.onerror=()=>res({});
+    img.src=dataURL;
+  });
+}
+function qualityHint(q){
+  const el=$("photoQHint"); if(!el) return;
+  const msgs=[];
+  if(q.glare) msgs.push("⚠️ Glare detected — angle away from overhead light");
+  if(q.blurry) msgs.push("🫣 Blurry — hold steady & retake");
+  el.textContent=msgs.join(" · ");
+}
+// hook into single-photo capture: wrap the existing change handler
+(function(){
+  const inp=$("photoInput"); if(!inp||inp._qHooked) return; inp._qHooked=true;
+  inp.addEventListener("change",()=>{
+    setTimeout(async()=>{
+      const pv=$("photoPrev");
+      if(pv&&!pv.classList.contains("hidden")&&pv.src){
+        const q=await analyzePhoto(pv.src); qualityHint(q);
+        pushRecent(pv.src);
+      }
+    },400);
+  });
+})();
+
+/* ---- #4: recent photos strip (tap to reprocess) ---- */
+let recentPhotos=[];
+function pushRecent(url){
+  if(!url||recentPhotos.some(p=>p.url===url)) return;
+  recentPhotos.unshift({url:url,ts:Date.now()});
+  if(recentPhotos.length>5) recentPhotos.pop();
+  renderRecent();
+}
+function renderRecent(){
+  const el=$("recentStrip"); if(!el) return;
+  el.innerHTML=""; el.classList.toggle("hidden",recentPhotos.length===0);
+  recentPhotos.forEach((p,i)=>{
+    const im=document.createElement("img"); im.src=p.url; im.title="Tap to re-scan";
+    im.addEventListener("click",()=>reprocessRecent(i));
+    el.appendChild(im);
+  });
+}
+async function reprocessRecent(i){
+  const p=recentPhotos[i]; if(!p) return;
+  toast("🔍 Re-scanning photo…"); buzzPat("tick");
+  try{
+    const txt=await ocrText(p.url,()=>{});
+    if(txt.split(/\s+/).filter(Boolean).length<3){ toast("📐 Almost no text — try rotating the label upright"); }
+    const parsed=parseLabel(txt);
+    openConfirm({brandId:parsed.brand||"other",flavor:parsed.flavor||"",item:parsed.item||"",lot:parsed.lot||"",bestBy:parsed.bestBy||"",date:parsed.date||"",p:1,r:0,cases:0,pack:parsed.pack||"",loc:lastLoc(),notes:"",found:parsed.found||{},conf:parsed.conf||{}});
+    buzzPat("success");
+  }catch(e){ toast("❌ OCR failed"); buzzPat("error"); }
+}
+
+/* ---- #5: rotate hint is integrated in reprocessRecent + queue flow ---- */
+function rotateHintFor(txt){
+  if(txt.split(/\s+/).filter(Boolean).length<3){
+    const n=$("ocrNote"); if(n) n.textContent="📐 Almost no text found — try rotating the label upright and retake.";
+  }
+}
+
+/* ---- #6: count presets ---- */
+document.querySelectorAll("#presetRow [data-preset]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    const [p,r,c]=b.dataset.preset.split(",").map(Number);
+    if(b.dataset.half){ const br=cntBrand(); cnt.P=0; cnt.R=Math.max(1,Math.round((br.rpp||10)/2)); cnt.C=0; }
+    else { cnt.P=p; cnt.R=r; cnt.C=c; }
+    updCount(); buzzPat("tick"); toast("Preset: "+b.textContent.trim());
+  });
+});
+
+/* ---- #7: per-brand count templates ---- */
+function getTmpls(){ const s=settings(); s.tmpls=s.tmpls||{}; return s.tmpls; }
+function renderTmpls(){
+  const row=$("tmplRow"); if(!row) return; row.innerHTML="";
+  const t=getTmpls(), b=cntBrand();
+  Object.keys(t).forEach(k=>{
+    if(k.split("|")[0]!==b.id) return;
+    const v=t[k], chip=document.createElement("button");
+    chip.className="tmplchip"; chip.textContent="📌 "+v.name+" ("+v.p+"P "+v.r+"R "+v.c+"C)";
+    chip.addEventListener("click",()=>{ cnt.P=v.p; cnt.R=v.r; cnt.C=v.c; updCount(); buzzPat("tick"); toast("Template applied"); });
+    chip.addEventListener("contextmenu",e=>{ e.preventDefault(); delete t[k]; save(); renderTmpls(); toast("Template deleted"); });
+    row.appendChild(chip);
+  });
+}
+$("btnSaveTmpl").addEventListener("click",()=>{
+  const b=cntBrand(), t=getTmpls();
+  const name=prompt("Template name:",""+cnt.P+"P "+cnt.R+"R "+cnt.C+"C");
+  if(!name) return;
+  t[b.id+"|"+Date.now()]={name:name,p:cnt.P,r:cnt.R,c:cnt.C};
+  save(); renderTmpls(); toast("📌 Template saved (long-press chip to delete)");
+});
+// re-render templates whenever brand changes
+$("cBrand").addEventListener("change",()=>setTimeout(renderTmpls,50));
+
+/* ---- #8: live equivalents in count total ---- */
+const _updCount=updCount;
+updCount=function(){
+  _updCount();
+  try{
+    const b=cntBrand(), t=cansFor(b,b.c,cnt.P,cnt.R,cnt.C);
+    const cases=(t/b.c), pallets=(t/b.p);
+    $("cDetail").textContent=cnt.P+"P + "+cnt.R+"R + "+cnt.C+"C · "+b.spec+" · ≈"+cases.toFixed(1)+" cases · "+pallets.toFixed(2)+" pallets";
+  }catch(e){}
+};
+
+/* ---- #9,#10,#12,#13: table bulk select, duplicate, totals footer, highlight ---- */
+let selRows=new Set();
+function renderBulkBar(){
+  const bar=$("bulkBar"); if(!bar) return;
+  bar.classList.toggle("show", selRows.size>0);
+  const n=$("selN"); if(n) n.textContent=selRows.size;
+}
+const _renderTable=renderTable;
+renderTable=function(){
+  _renderTable();
+  try{
+    // add checkboxes + duplicate buttons to each row
+    const tb=$("gridBody");
+    tb.querySelectorAll("tr").forEach(tr=>{
+      const btn=tr.querySelector("button[data-i]"); if(!btn) return;
+      const i=+btn.dataset.i;
+      // checkbox cell at start
+      const td=document.createElement("td"); td.className="selcol";
+      const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=selRows.has(i);
+      cb.addEventListener("change",()=>{ iChecked(i,cb.checked); });
+      td.appendChild(cb); tr.insertBefore(td,tr.firstChild);
+      // duplicate button next to edit/del
+      const act=tr.lastChild, dup=document.createElement("button");
+      dup.className="iconbtn dupbtn"; dup.textContent="⧉"; dup.title="Duplicate row";
+      dup.addEventListener("click",ev=>{ ev.stopPropagation(); dupRow(i); });
+      act.appendChild(dup);
+    });
+    // search highlight
+    const q=($("fltQ").value||"").trim();
+    if(q.length>1){
+      const rx=new RegExp("("+escReg(q)+")","gi");
+      tb.querySelectorAll("td").forEach(td=>{
+        if(td.querySelector("input,button")) return;
+        td.innerHTML=td.textContent.replace(rx,"<mark>$1</mark>");
+      });
+    }
+    // totals footer over filtered view
+    const v=viewRows(); let fp=0,fr=0,fc=0,fcans=0;
+    v.forEach(x=>{ fp+=x.r.p||0; fr+=x.r.r||0; fc+=x.r.c||0; fcans+=x.r.cans||0; });
+    const ft=$("gridFoot");
+    if(ft) ft.innerHTML="<tr><td></td><td colspan='7' style='text-align:right'>Filtered totals:</td><td>"+fp+"</td><td>"+fr+"</td><td>"+fc+"</td><td><b>"+fmt(fcans)+"</b></td><td></td><td></td></tr>";
+    renderBulkBar(); updateQuota();
+  }catch(e){}
+};
+function iChecked(i,on){ on?selRows.add(i):selRows.delete(i); renderBulkBar(); const sa=$("selAll"); if(sa) sa.checked=false; }
+function dupRow(i){
+  const r=rows[i]; if(!r) return;
+  const c=Object.assign({},r); c.ts=new Date().toLocaleString(); c._d=todayKey();
+  rows.splice(i+1,0,c); save(); renderTable(); buzzPat("success"); toast("⧉ Row duplicated");
+}
+$("btnDelSel").addEventListener("click",()=>{
+  if(!selRows.size) return;
+  if(!confirm("Delete "+selRows.size+" selected row(s)?")) return;
+  const idx=[...selRows].sort((a,b)=>b-a);
+  idx.forEach(i=>rows.splice(i,1));
+  selRows.clear(); save(); renderTable(); buzzPat("done"); toast("🗑 Deleted "+idx.length+" rows");
+});
+$("btnSelAll").addEventListener("click",()=>{ viewRows().forEach(x=>selRows.add(x.i)); renderTable(); });
+$("btnSelNone").addEventListener("click",()=>{ selRows.clear(); renderTable(); });
+$("selAll").addEventListener("change",e=>{ selRows.clear(); if(e.target.checked) viewRows().forEach(x=>selRows.add(x.i)); renderTable(); });
+
+/* ---- #11: CSV filename with row count ---- */
+const _csvHandler=$("btnCsv").onclick;
+// rebind: replace the existing listener by cloning
+(function(){
+  const old=$("btnCsv"), nu=old.cloneNode(true);
+  old.parentNode.replaceChild(nu,old);
+  nu.addEventListener("click",()=>{
+    if(!rows.length){ toast("Nothing to export yet."); return; }
+    dl("palletscan_"+fileStamp()+"_"+sessSlug()+"_"+rows.length+"rows.csv", buildCsv(rows), "text/csv");
+    toast("📥 CSV downloaded ("+rows.length+" rows)"); buzzPat("done");
+  });
+})();
+
+/* ---- #14: session timer ---- */
+function tickTimer(){
+  const el=$("sessTimer"); if(!el) return;
+  try{
+    const s=S(); if(!s||!s.created) return;
+    const el2=Date.now()-s.created, h=Math.floor(el2/36e5), m=Math.floor(el2%36e5/6e4);
+    el.textContent="⏱ "+(h?h+"h ":"")+m+"m";
+  }catch(e){}
+}
+setInterval(tickTimer,30000);
+
+/* ---- #15: save indicator handled in save(); session lastActive ---- */
+const _setActive=setActive;
+setActive=function(id){
+  _setActive(id);
+  try{ const s=S(); s.lastActive=Date.now(); save(); renderRecent2(); }catch(e){}
+  tickTimer();
+};
+function renderRecent2(){
+  const row=$("recentRow"); if(!row) return; row.innerHTML="";
+  const rec=state.sessions.filter(s=>s.id!==state.activeId).sort((a,b)=>(b.lastActive||0)-(a.lastActive||0)).slice(0,3);
+  rec.forEach(s=>{
+    const b=document.createElement("button"); b.className="tmplchip"; b.textContent="🕘 "+s.name;
+    b.addEventListener("click",()=>setActive(s.id));
+    row.appendChild(b);
+  });
+}
+
+/* ---- #17: session notes ---- */
+$("sessNotes").addEventListener("input",e=>{
+  try{ S().notes=e.target.value; save(); }catch(err){}
+});
+const _renderSessionSel=renderSessionSel;
+renderSessionSel=function(){
+  _renderSessionSel(); renderRecent2();
+  try{ const n=$("sessNotes"); if(n&&document.activeElement!==n) n.value=S().notes||""; }catch(e){}
+  tickTimer();
+};
+
+/* ---- #18: sound toggle ---- */
+function applySound(){ const b=$("btnSound"); if(b) b.textContent=sndOn()?"🔊":"🔇"; }
+$("btnSound").addEventListener("click",()=>{ settings().sound=!sndOn(); save(); applySound(); toast(sndOn()?"🔊 Sound on":"🔇 Sound off"); });
+
+/* ---- #20,#21: quota ring + streak ---- */
+function todayPallets(){ return rowsToday().reduce((t,r)=>t+(+r.p||0),0); }
+function getQuota(){ const q=settings().quota; return (typeof q==="number"&&q>0)?q:50; }
+function updateQuota(){
+  try{
+    const q=getQuota(), p=todayPallets(), pct=Math.min(1,p/q);
+    const fg=$("quotaFg"); if(fg) fg.style.strokeDashoffset=(62.8*(1-pct)).toFixed(1);
+    const tx=$("quotaTxt"); if(tx) tx.textContent=p+"/"+q;
+    const st=$("streakCt"); if(st) st.textContent="🔥 "+p;
+    const fg2=$("quotaFg"); if(fg2) fg2.style.stroke=pct>=1?"#22e584":"#22d3ee";
+    if(pct>=1&&!updateQuota._celebrated){ updateQuota._celebrated=true; buzzPat("done"); toast("🎉 Daily quota hit! "+p+" pallets"); }
+    if(pct<1) updateQuota._celebrated=false;
+  }catch(e){}
+}
+$("quotaWrap").addEventListener("click",()=>{
+  const v=prompt("Daily pallet quota:", String(getQuota()));
+  const n=parseInt(v,10);
+  if(n>0){ settings().quota=n; save(); updateQuota(); toast("🎯 Quota set to "+n+"/day"); }
+});
+// hook quota updates into badge/table renders
+const _updateBadge=updateBadge;
+updateBadge=function(){ _updateBadge(); updateQuota(); };
+
+/* ---- #23: CSV import recovery ---- */
+const _parseCsv=parseCsv;
+parseCsv=function(text){
+  const lines=String(text).trim().split(/\r?\n/);
+  if(lines.length<2) return [];
+  const head=splitCsvLine(lines[0]).map(h=>h.trim().toLowerCase());
+  const out=[]; let repaired=0, skipped=0;
+  for(let i=1;i<lines.length;i++){
+    try{
+      const c=splitCsvLine(lines[i]);
+      if(!c.length||!c.some(x=>String(x).trim())){ skipped++; continue; }
+      const r=_rowFromCsv(head,c);
+      if(r){ out.push(r); if(r._repaired) repaired++; }
+      else skipped++;
+    }catch(e){ skipped++; }
+  }
+  parseCsv._stats={ok:out.length,repaired:repaired,skipped:skipped};
+  return out;
+};
+function _rowFromCsv(head,c){
+  try{
+    const idx=n=>head.indexOf(n), g=n=>{ const j=idx(n); return j>=0?(c[j]||"").trim():""; };
+    const num=v=>{ const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?0:n; };
+    const r={ts:g("time")||new Date().toLocaleString(),scanner:g("scanner"),brand:g("brand")||"Other / Mixed",flavor:g("flavor"),item:g("item"),lot:g("lot"),bestBy:g("bestby"),date:g("date"),pack:g("case pack")||g("pack"),p:num(g("p")),r:num(g("r")),c:num(g("c")),cans:num(g("cans")),loc:g("loc")||g("location"),notes:g("notes")};
+    if(!r.cans){ const b=BRANDS.find(x=>x.name===r.brand); if(b) r.cans=(r.p*b.p)+(r.r*Math.round(b.p/(b.rpp||10)))+(r.c*(+r.pack||b.c)); r._repaired=true; }
+    return r;
+  }catch(e){ return null; }
+}
+// surface import stats
+(function(){
+  const inp=$("importInput");
+  inp.addEventListener("change",()=>{
+    setTimeout(()=>{
+      const st=parseCsv._stats;
+      if(st&&(st.repaired||st.skipped)) toast("📥 Imported "+st.ok+" rows"+(st.repaired?" ("+st.repaired+" repaired)":"")+(st.skipped?" ("+st.skipped+" skipped)":""));
+    },600);
+  });
+})();
+
+/* ---- #24: offline indicator ---- */
+function applyNet(){
+  const d=$("netDot"); if(!d) return;
+  const on=navigator.onLine!==false;
+  d.className=on?"on":"off"; d.id="netDot";
+  d.title=on?"Online":"Offline — OCR needs prior load";
+  if(!on) toast("📴 Offline — previously loaded features still work");
+}
+window.addEventListener("online",applyNet);
+window.addEventListener("offline",applyNet);
+
+/* ---- init v6 ---- */
+applySound(); applyNet(); renderTmpls(); tickTimer(); updateQuota(); renderRecent();
 
 /* ================= INIT ================= */
 try{ $("scannerName").value=localStorage.getItem("palletscan_name")||""; }catch(e){}
