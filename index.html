@@ -7,8 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="PalletScan">
 <link rel="manifest" href="manifest.webmanifest">
 
 <title>PalletScan Counter — Warehouse Counting Tool</title>
@@ -426,6 +427,8 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
     <h2>Display &amp; setup</h2>
     <div class="toggle" id="sizeToggle"><span class="sw"></span><span>Large text mode (glove-friendly)</span></div>
     <div class="toggle on" id="wakeToggle"><span class="sw"></span><span>Keep screen awake while counting</span></div>
+    <button class="btn" id="btnInstallApp" type="button" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#0369a1,#0ea5e9);border:1px solid #38bdf8">📲 INSTALL APP &mdash; put PalletScan on your home screen</button>
+    <div class="note" id="installNote" style="margin-top:6px">Installs as a real app: full-screen, works offline at the dock, no browser bars.</div>
     <div class="note" style="margin-top:10px">
       &bull; Camera needs <b>HTTPS</b> (or localhost). Host on GitHub Pages or any https static host for scanning.<br>
       &bull; Barcode + OCR libraries load from CDN on first open &mdash; needs internet once.<br>
@@ -1758,14 +1761,22 @@ $("btnLiveStop").addEventListener("click",()=>stopLive(false));
 <script id="n8-pwa-js">
 (function(){
   if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
-  var btn=document.getElementById('n8-install-btn'),toast=document.getElementById('n8-install-toast'),dp=null;
+  var btn=document.getElementById('n8-install-btn'),toast=document.getElementById('n8-install-toast'),
+      sBtn=document.getElementById('btnInstallApp'),sNote=document.getElementById('installNote'),dp=null;
   function standalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
+  function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
+  function showToast(msg){toast.textContent=msg;toast.style.display='block';setTimeout(function(){toast.style.display='none';},5200);}
+  function markInstalled(){btn.style.display='none';if(sBtn)sBtn.style.display='none';if(sNote)sNote.textContent='\u2705 Installed \u2014 you are running the app version.';}
+  if(standalone()){markInstalled();}
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;if(!standalone())btn.style.display='flex';});
-  window.addEventListener('appinstalled',function(){btn.style.display='none';});
-  btn.addEventListener('click',function(){
+  window.addEventListener('appinstalled',function(){markInstalled();showToast('\u2705 PalletScan installed \u2014 find it on your home screen.');});
+  function doInstall(){
     if(dp){dp.prompt();dp.userChoice.then(function(){dp=null;btn.style.display='none';});}
-    else{toast.textContent='To install: open your browser menu (⋮) and tap "Install app" or "Add to Home screen".';toast.style.display='block';setTimeout(function(){toast.style.display='none';},4200);}
-  });
+    else if(isIOS()){showToast('To install: tap the Share button, then \"Add to Home Screen\".');}
+    else{showToast('To install: open your browser menu (\u22ee) and tap \"Install app\" or \"Add to Home screen\".');}
+  }
+  btn.addEventListener('click',doInstall);
+  if(sBtn)sBtn.addEventListener('click',doInstall);
 })();
 </script>
 
