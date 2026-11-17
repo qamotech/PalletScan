@@ -438,11 +438,47 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
   </div>
 </section>
 
+<!-- ============ HISTORY TAB (#40) ============ -->
+<style>
+.histitem{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px;background:var(--bg2)}
+.histhead{display:flex;gap:8px;align-items:flex-start}
+.histchk{padding:4px 2px}
+.histchk input{width:22px;height:22px}
+.histmain{flex:1;min-width:0}
+.histbtn{width:auto;flex:0 0 auto;padding:0 12px}
+.histrows{margin-top:8px;border-top:1px solid var(--line)}
+.histrow{display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:space-between;padding:7px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.histrow b{color:var(--acc)}
+</style>
+<section class="tab" id="tab-hist">
+  <div class="card">
+    <h2>🕘 Count history</h2>
+    <div class="note" id="histCurrent" style="margin-bottom:8px"></div>
+    <button class="btn ok" id="btnFinishSession">✔ FINISH CURRENT SESSION</button>
+    <div class="note" style="margin-top:6px">Finishing stamps the session with its completion time, saves it below, and starts a fresh session. Finished sessions stay saved on this device.</div>
+  </div>
+  <div class="card">
+    <h2>📦 Past sessions</h2>
+    <div id="histList"></div>
+    <div class="row2" style="margin-top:10px">
+      <button class="btn ghost sm" id="btnHistSelAll">Select all</button>
+      <button class="btn ghost sm" id="btnHistSelNone">Clear selection</button>
+    </div>
+    <button class="btn" id="btnHistShare" style="margin-top:10px">📤 SHARE SUMMARY</button>
+    <div class="row2">
+      <button class="btn ghost sm" id="btnHistCsv">⬇ Export CSV</button>
+      <button class="btn ghost sm" id="btnHistCopy">Copy summary</button>
+    </div>
+    <div class="note" style="margin-top:8px">Exports cover the checked sessions &mdash; or ALL sessions when none are checked. The summary is a plain-text recap (brand/flavor, lot, count) ready to send to Bill or Jenn; the CSV adds a Session column and matches your count sheets.</div>
+  </div>
+</section>
+
 <nav class="tabs">
   <button data-t="tab-scan" class="on">📷 SCAN<span class="badge" id="tabBadgeScan"></span></button>
   <button data-t="tab-count">🔢 COUNT<span class="badge" id="tabBadgeCount"></span></button>
   <button data-t="tab-table">📋 TABLE<span class="badge" id="tabBadge"></span></button>
   <button data-t="tab-sum">📊 SUMMARY<span class="badge" id="tabBadgeSum"></span></button>
+  <button data-t="tab-hist">🕘 HISTORY<span class="badge" id="tabBadgeHist"></span></button>
 </nav>
 <div id="tour" class="hidden"><div id="tourCard"><div id="tourStep"></div><div id="tourBtns"><button class="btn sm" id="tourNext">Next</button><button class="btn ghost sm" id="tourSkip">Got it</button></div></div></div>
 <div id="toast"></div>
@@ -1777,6 +1813,159 @@ $("btnLiveStop").addEventListener("click",()=>stopLive(false));
   }
   btn.addEventListener('click',doInstall);
   if(sBtn)sBtn.addEventListener('click',doInstall);
+})();
+</script>
+
+<script>
+/* ================= #40: SESSION HISTORY + EXPORT =================
+   Completed sessions live in state.sessions with a completedAt stamp.
+   History tab lists past sessions; export builds a shareable text
+   summary or a multi-session CSV (Session column + the usual columns). */
+(function(){
+  const histSel=new Set(), histOpen=new Set();
+  function sessTotals(s){ const rs=(s&&s.rows)||[];
+    return { rows:rs.length,
+      cans:rs.reduce((t,r)=>t+(+r.cans||0),0),
+      pallets:rs.reduce((t,r)=>t+(+r.p||0),0) }; }
+  function fmtWhen(ts){ try{ return new Date(ts).toLocaleString("en-US",
+    {month:"2-digit",day:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}); }
+    catch(e){ return ""; } }
+  function pastList(){
+    return state.sessions.filter(s=>s.id!==state.activeId||s.completedAt)
+      .slice().sort((a,b)=>((b.completedAt||b.lastActive||b.created||0)-
+                           (a.completedAt||a.lastActive||a.created||0))); }
+  function entryHtml(s){
+    const t=sessTotals(s), open=histOpen.has(s.id);
+    const when=s.completedAt? "✔ Finished "+fmtWhen(s.completedAt)
+                             : "Started "+fmtWhen(s.created||s.lastActive||Date.now());
+    let h="<div class='histitem'><div class='histhead'>"+
+      "<label class='histchk'><input type='checkbox' data-sel='"+s.id+"'"+
+        (histSel.has(s.id)?" checked":"")+"></label>"+
+      "<div class='histmain'><b>"+esc(s.name)+"</b>"+
+      "<div class='note'>"+when+"</div>"+
+      "<div class='note'>"+t.rows+" rows · "+fmt(t.pallets)+" pallets · "+fmt(t.cans)+" cans</div></div>"+
+      "<button class='btn ghost sm histbtn' data-det='"+s.id+"'>"+(open?"▾ Hide":"▸ Rows")+"</button>"+
+      "<button class='btn ghost sm histbtn' data-open='"+s.id+"'>Open</button></div>";
+    if(open){
+      h+="<div class='histrows'>";
+      if(!s.rows.length) h+="<div class='note' style='padding:7px 2px'>No rows.</div>";
+      s.rows.forEach(r=>{
+        h+="<div class='histrow'><span>"+esc(r.brand||"")+(r.flavor?" "+esc(r.flavor):"")+"</span>"+
+          "<span class='note'>Lot "+esc(r.lot||"—")+"</span>"+
+          "<b>"+fmt(r.cans||0)+" cans</b>"+
+          "<span class='note'>"+(r.p||0)+"p/"+(r.r||0)+"r/"+(r.c||0)+"c · "+esc(r.ts||"")+"</span></div>";
+      });
+      h+="</div>";
+    }
+    return h+"</div>";
+  }
+  function renderHistory(){
+    try{
+      const cur=S(), ct=sessTotals(cur);
+      $("histCurrent").innerHTML="Current session: <b style='color:var(--txt)'>"+esc(cur.name)+"</b> · "+
+        ct.rows+" rows · "+fmt(ct.cans)+" cans"+
+        (cur.completedAt? " · ✔ finished "+fmtWhen(cur.completedAt):"");
+      const past=pastList();
+      $("histList").innerHTML= past.length? past.map(entryHtml).join("")
+        : "<div class='note'>No past sessions yet. Finish the current session and it will show up here.</div>";
+      const done=state.sessions.filter(s=>s.completedAt).length;
+      const b=$("tabBadgeHist");
+      if(b){ b.textContent=done?String(done):""; b.classList.toggle("show",done>0); }
+    }catch(e){}
+  }
+  function finishSession(){
+    const s=S();
+    if(s.completedAt){ toast("This session is already finished."); return; }
+    if(!s.rows.length && !confirm("Current session has no rows yet. Finish it anyway?")) return;
+    if(s.rows.length && !confirm("Finish '"+s.name+"' ("+s.rows.length+" rows, "+
+        fmt(sessTotals(s).cans)+" cans)? It moves to History and a fresh session starts.")) return;
+    s.completedAt=Date.now(); save();
+    const ns={id:"s"+Date.now(),
+      name:"Count "+new Date().toLocaleDateString("en-US",{month:"2-digit",day:"2-digit"}),
+      created:Date.now(), rows:[]};
+    state.sessions.push(ns); setActive(ns.id);
+    buzzPat("done"); toast("✔ Session finished — saved to History");
+    renderHistory();
+  }
+  function openSession(id){
+    const s=state.sessions.find(x=>x.id===id); if(!s) return;
+    const wasDone=!!s.completedAt;
+    if(wasDone) delete s.completedAt;
+    setActive(id); save();
+    toast(wasDone? "Session reopened — it's your current session again" : "Session opened");
+    renderHistory();
+    document.querySelector('[data-t="tab-table"]').click();
+  }
+  function exportList(){
+    const picked=state.sessions.filter(s=>histSel.has(s.id));
+    return (picked.length? picked : state.sessions.slice())
+      .sort((a,b)=>(a.created||0)-(b.created||0));
+  }
+  function buildSummaryText(list){
+    const L=["PalletScan count summary — "+stamp()];
+    let who=""; try{ who=scanner(); }catch(e){}
+    if(who) L.push("Scanner: "+who);
+    let tR=0,tP=0,tC=0;
+    list.forEach(s=>{
+      const t=sessTotals(s); tR+=t.rows; tP+=t.pallets; tC+=t.cans;
+      L.push("");
+      L.push("Session: "+s.name+(s.completedAt? " (finished "+fmtWhen(s.completedAt)+")"
+                                             : " (started "+fmtWhen(s.created||Date.now())+")"));
+      L.push("  "+t.rows+" rows · "+fmt(t.pallets)+" pallets · "+fmt(t.cans)+" cans");
+      s.rows.forEach(r=>{
+        L.push("  - "+(r.brand||"")+(r.flavor?" "+r.flavor:"")+" | Lot "+(r.lot||"—")+
+          " | "+(r.p||0)+" plt, "+(r.r||0)+" rows, "+(r.c||0)+" cs | "+fmt(r.cans||0)+" cans | "+(r.ts||""));
+      });
+    });
+    L.push("");
+    L.push("TOTAL: "+list.length+" session(s) · "+tR+" rows · "+fmt(tP)+" pallets · "+fmt(tC)+" cans");
+    return L.join("\n");
+  }
+  function buildHistCsv(list){
+    const out=[["Session"].concat(CSV_HEAD).join(",")];
+    list.forEach(s=>{ s.rows.forEach(r=>{
+      out.push([s.name,r.ts,r.scanner,r.brand,r.flavor||"",r.item,r.lot,r.bestBy,r.date,
+        r.pack,r.p,r.r,r.c,r.cans,r.loc,r.notes].map(csvCell).join(","));
+    }); });
+    return out.join("\n");
+  }
+  $("btnFinishSession").addEventListener("click",finishSession);
+  $("histList").addEventListener("click",e=>{
+    const ob=e.target.closest("[data-open]"), db=e.target.closest("[data-det]");
+    if(ob){ openSession(ob.getAttribute("data-open")); return; }
+    if(db){ const id=db.getAttribute("data-det");
+      histOpen.has(id)? histOpen.delete(id) : histOpen.add(id); renderHistory(); }
+  });
+  $("histList").addEventListener("change",e=>{
+    const cb=e.target.closest("[data-sel]"); if(!cb) return;
+    const id=cb.getAttribute("data-sel");
+    cb.checked? histSel.add(id) : histSel.delete(id);
+  });
+  $("btnHistSelAll").addEventListener("click",()=>{ pastList().forEach(s=>histSel.add(s.id)); renderHistory(); });
+  $("btnHistSelNone").addEventListener("click",()=>{ histSel.clear(); renderHistory(); });
+  $("btnHistShare").addEventListener("click",async ()=>{
+    const list=exportList(); if(!list.length){ toast("No sessions to export."); return; }
+    const text=buildSummaryText(list);
+    if(navigator.share){
+      try{ await navigator.share({title:"PalletScan count summary", text:text}); return; }
+      catch(e){ if(e&&e.name==="AbortError") return; }
+    }
+    dl("palletscan_summary_"+fileStamp()+".txt", text, "text/plain");
+    toast("Summary downloaded (.txt)");
+  });
+  $("btnHistCopy").addEventListener("click",async ()=>{
+    const list=exportList(); if(!list.length){ toast("No sessions to export."); return; }
+    try{ await navigator.clipboard.writeText(buildSummaryText(list)); toast("Summary copied — paste anywhere"); }
+    catch(e){ toast("Copy blocked by browser — use Share instead."); }
+  });
+  $("btnHistCsv").addEventListener("click",()=>{
+    const list=exportList(); if(!list.length){ toast("No sessions to export."); return; }
+    dl("palletscan_history_"+fileStamp()+".csv", buildHistCsv(list), "text/csv");
+    toast("⬇ History CSV downloaded");
+  });
+  const hb=document.querySelector('[data-t="tab-hist"]');
+  if(hb) hb.addEventListener("click",renderHistory);
+  renderHistory();
 })();
 </script>
 
