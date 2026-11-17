@@ -236,7 +236,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 <body>
 <header>
   <h1>PALLET<span class="cy">SCAN</span> COUNTER</h1>
-  <div class="sub">Scan &middot; Confirm &middot; Count &middot; Export &mdash; <b id="hdrStats">0 rows</b><button class="hdrbtn" id="btnSound" title="Toggle sound">🔊</button><button class="hdrbtn" id="btnVoice" title="Voice readout">🔇</button><button class="hdrbtn" id="btnBig" title="Big buttons (glove mode)">🧤</button><span id="quotaWrap" title="Tap to set daily pallet quota"><svg id="quotaRing" width="26" height="26" viewBox="0 0 26 26"><circle class="bg" cx="13" cy="13" r="10" fill="none" stroke-width="4"/><circle class="fg" id="quotaFg" cx="13" cy="13" r="10" fill="none" stroke-width="4" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg><span id="quotaTxt" style="font-size:11px">0/50</span></span><span id="streakCt" title="Pallets logged today">🔥 0</span><span id="netDot" class="on" title="Online status"></span></div>
+  <div class="sub">Scan &middot; Confirm &middot; Count &middot; Export &mdash; <b id="hdrStats">0 rows</b><button class="hdrbtn" id="btnSound" title="Toggle sound">🔊</button><button class="hdrbtn" id="btnVoice" title="Voice readout">🔇</button><button class="hdrbtn" id="btnBig" title="Big buttons (glove mode)">🧤</button><span id="quotaWrap" title="Tap to set daily pallet quota"><svg id="quotaRing" width="26" height="26" viewBox="0 0 26 26"><circle class="bg" cx="13" cy="13" r="10" fill="none" stroke-width="4"/><circle class="fg" id="quotaFg" cx="13" cy="13" r="10" fill="none" stroke-width="4" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg><span id="quotaTxt" style="font-size:11px">0/50</span></span><span id="streakCt" title="Pallets logged today">🔥 0</span><span id="netDot" class="on" title="Online status"></span><span id="netTxt" style="font-size:11px;color:var(--dim);margin-left:6px"></span></div>
   <div id="scanner-id">
     <input type="text" id="scannerName" placeholder="Scanner name (e.g. Nate)" autocomplete="off">
   </div>
@@ -449,6 +449,12 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 .histrows{margin-top:8px;border-top:1px solid var(--line)}
 .histrow{display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:space-between;padding:7px 2px;border-bottom:1px solid var(--line);font-size:14px}
 .histrow b{color:var(--acc)}
+.labelinfo{margin-top:6px;border-top:1px dashed var(--line);padding-top:6px;color:var(--txt)}
+.labelinfo b{color:var(--ok)}
+.labelinfo .lsnap{color:var(--dim);font-size:11px}
+.obitem{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px;background:var(--bg2);font-size:14px}
+.obitem .obmain{flex:1;min-width:0}
+.obitem button{width:auto;padding:6px 12px;min-height:40px;font-size:13px}
 </style>
 <section class="tab" id="tab-hist">
   <div class="card">
@@ -456,6 +462,11 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
     <div class="note" id="histCurrent" style="margin-bottom:8px"></div>
     <button class="btn ok" id="btnFinishSession">✔ FINISH CURRENT SESSION</button>
     <div class="note" style="margin-top:6px">Finishing stamps the session with its completion time, saves it below, and starts a fresh session. Finished sessions stay saved on this device.</div>
+  </div>
+  <div class="card" id="outboxCard">
+    <h2>📤 Outbox</h2>
+    <div id="outboxList"></div>
+    <div class="note" id="syncNote" style="margin-top:6px"></div>
   </div>
   <div class="card">
     <h2>📦 Past sessions</h2>
@@ -487,6 +498,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="labels-data.js"></script>
 <script>
 "use strict";
 /* ================= BRAND SPECS (from your cyber-count sheets) ================
@@ -962,6 +974,13 @@ function showSpecInfo(elId,brandId){
   const b=brandById(brandId);
   $(elId).innerHTML=brandIcon(b)+" <b style='color:var(--acc)'>"+esc(b.spec)+"</b> · "+esc(b.category||"")+
     " <span class='prcbadge'>"+prcBadge(b)+"</span>";
+  /* #46: PALLET LABELS bridge — append sheet data for the selected brand+flavor */
+  try{
+    const flv = elId==="cSpecInfo" ? ($("cFlavor")?$("cFlavor").value:"")
+                                   : ($("sFlavor")?$("sFlavor").value:"");
+    const li = (typeof labelInfoHtml==="function") ? labelInfoHtml(brandId, flv) : "";
+    if(li) $(elId).innerHTML += li;
+  }catch(e){}
 }
 function syncItemCodes(brandId){
   const b=brandById(brandId);
@@ -1946,11 +1965,18 @@ $("btnLiveStop").addEventListener("click",()=>stopLive(false));
   $("btnHistShare").addEventListener("click",async ()=>{
     const list=exportList(); if(!list.length){ toast("No sessions to export."); return; }
     const text=buildSummaryText(list);
+    /* #41: offline — queue the share in the outbox instead of losing it */
+    if(navigator.onLine===false){
+      queueOutbox({kind:"share", text:text, sessions:list.map(s=>s.name)});
+      toast("📴 Offline — summary queued in the Outbox; it sends when signal returns");
+      return;
+    }
     if(navigator.share){
-      try{ await navigator.share({title:"PalletScan count summary", text:text}); return; }
+      try{ await navigator.share({title:"PalletScan count summary", text:text}); markSynced(); return; }
       catch(e){ if(e&&e.name==="AbortError") return; }
     }
     dl("palletscan_summary_"+fileStamp()+".txt", text, "text/plain");
+    markSynced();
     toast("Summary downloaded (.txt)");
   });
   $("btnHistCopy").addEventListener("click",async ()=>{
@@ -1960,13 +1986,153 @@ $("btnLiveStop").addEventListener("click",()=>stopLive(false));
   });
   $("btnHistCsv").addEventListener("click",()=>{
     const list=exportList(); if(!list.length){ toast("No sessions to export."); return; }
-    dl("palletscan_history_"+fileStamp()+".csv", buildHistCsv(list), "text/csv");
+    const csv=buildHistCsv(list);
+    /* #41: offline — queue the export in the outbox; it downloads on reconnect */
+    if(navigator.onLine===false){
+      queueOutbox({kind:"csv", text:csv, sessions:list.map(s=>s.name)});
+      toast("📴 Offline — CSV queued in the Outbox; it downloads when signal returns");
+      return;
+    }
+    dl("palletscan_history_"+fileStamp()+".csv", csv, "text/csv");
+    markSynced();
     toast("⬇ History CSV downloaded");
   });
   const hb=document.querySelector('[data-t="tab-hist"]');
   if(hb) hb.addEventListener("click",renderHistory);
   renderHistory();
 })();
+</script>
+
+<script>
+"use strict";
+/* ================= #41 OFFLINE OUTBOX + #46 LABELS BRIDGE =================
+   Counts themselves are local-first (localStorage) and never wait on signal.
+   The outbox covers the one thing that does need signal: sending a finished
+   session out (share / CSV export). Attempted offline -> queued here, flushed
+   automatically on reconnect, or by hand with Send now. */
+const LS_OUTBOX="palletscan_outbox", LS_SYNC="palletscan_lastSync";
+function outboxLoad(){ try{ const q=JSON.parse(localStorage.getItem(LS_OUTBOX)||"[]"); return Array.isArray(q)?q:[]; }catch(e){ return []; } }
+function outboxSave(q){ try{ localStorage.setItem(LS_OUTBOX, JSON.stringify(q)); }catch(e){} }
+function lastSync(){ try{ const t=+localStorage.getItem(LS_SYNC)||0; return t||0; }catch(e){ return 0; } }
+function fmtSyncT(t){ if(!t) return "never"; const d=new Date(t);
+  return d.toLocaleDateString("en-US",{month:"2-digit",day:"2-digit"})+" "+
+    String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+function queueOutbox(item){
+  const q=outboxLoad();
+  q.push({id:"q"+Date.now()+"_"+Math.floor(Math.random()*1e4), ts:Date.now(),
+    kind:item.kind, text:item.text, sessions:item.sessions||[]});
+  outboxSave(q); renderOutbox(); updateNetTxt();
+  return q.length;
+}
+function markSynced(){ try{ localStorage.setItem(LS_SYNC, String(Date.now())); }catch(e){} renderOutbox(); }
+let flushing=false;
+async function flushOutbox(){
+  if(flushing || navigator.onLine===false) return;
+  const q=outboxLoad(); if(!q.length) return;
+  flushing=true;
+  let sent=0;
+  for(const it of q.slice()){
+    try{
+      if(it.kind==="share"){
+        let shared=false;
+        if(navigator.share){
+          try{ await navigator.share({title:"PalletScan count summary", text:it.text}); shared=true; }
+          catch(e){ if(e&&e.name==="AbortError"){ /* user backed out — keep it queued */ break; } }
+        }
+        if(!shared) dl("palletscan_summary_"+fileStamp()+".txt", it.text, "text/plain");
+      }else{ /* csv */
+        dl("palletscan_history_"+fileStamp()+".csv", it.text, "text/csv");
+      }
+      const cur=outboxLoad().filter(x=>x.id!==it.id); outboxSave(cur); sent++;
+    }catch(e){ /* leave it queued */ }
+  }
+  flushing=false;
+  if(sent){ markSynced(); toast("📤 Outbox sent — "+sent+" queued export"+(sent>1?"s":"")+" delivered"); }
+  renderOutbox(); updateNetTxt();
+}
+function renderOutbox(){
+  const list=$("outboxList"), note=$("syncNote"); if(!list) return;
+  const q=outboxLoad();
+  if(!q.length){
+    list.innerHTML="<div class='note'>Nothing waiting. Exports you start while offline land here and send themselves when signal returns.</div>";
+  }else{
+    list.innerHTML=q.map(it=>
+      "<div class='obitem'><div class='obmain'>"+(it.kind==="csv"?"⬇ CSV export":"📤 Summary share")+
+      " — "+esc((it.sessions||[]).join(", ")||"sessions")+
+      "<br><span class='note'>queued "+fmtSyncT(it.ts)+"</span></div>"+
+      "<button class='btn ghost' data-ob-send='"+it.id+"'>Send now</button>"+
+      "<button class='btn ghost' data-ob-del='"+it.id+"'>Discard</button></div>").join("")+
+      "<button class='btn' id='btnFlushOutbox' style='margin-top:10px'>📤 SEND ALL NOW</button>";
+    const fb=$("btnFlushOutbox");
+    if(fb) fb.addEventListener("click",()=>{ if(navigator.onLine===false){ toast("Still offline — they'll send when signal returns"); return; } flushOutbox(); });
+  }
+  if(note) note.textContent="Last synced: "+fmtSyncT(lastSync())+(q.length? " · "+q.length+" waiting":"");
+}
+const obListEl=$("outboxList");
+if(obListEl) obListEl.addEventListener("click",e=>{
+  const s=e.target.closest("[data-ob-send]"), d=e.target.closest("[data-ob-del]");
+  if(d){ outboxSave(outboxLoad().filter(x=>x.id!==d.getAttribute("data-ob-del"))); renderOutbox(); updateNetTxt(); toast("Queued export discarded"); return; }
+  if(s){ if(navigator.onLine===false){ toast("Still offline — it'll send when signal returns"); return; }
+    const it=outboxLoad().find(x=>x.id===s.getAttribute("data-ob-send")); if(!it) return;
+    (async()=>{ try{
+        if(it.kind==="share"){
+          let shared=false;
+          if(navigator.share){ try{ await navigator.share({title:"PalletScan count summary", text:it.text}); shared=true; }catch(err){ if(err&&err.name==="AbortError") return; } }
+          if(!shared) dl("palletscan_summary_"+fileStamp()+".txt", it.text, "text/plain");
+        }else dl("palletscan_history_"+fileStamp()+".csv", it.text, "text/csv");
+        outboxSave(outboxLoad().filter(x=>x.id!==it.id)); markSynced(); toast("📤 Sent");
+      }catch(err){ toast("Send failed — still queued"); }
+      renderOutbox(); updateNetTxt(); })();
+  }
+});
+/* --- connectivity indicator (extends the header net dot) + auto-flush --- */
+function updateNetTxt(){
+  const t=$("netTxt"); if(!t) return;
+  const on=navigator.onLine!==false, n=outboxLoad().length;
+  t.textContent = on ? (n? "· "+n+" queued" : "") : "· OFFLINE"+(n? " · "+n+" queued":"");
+  t.style.color = on? "var(--dim)" : "var(--warn)";
+}
+window.addEventListener("online",()=>{ updateNetTxt(); renderOutbox(); flushOutbox(); });
+window.addEventListener("offline",()=>{ updateNetTxt(); renderOutbox(); });
+updateNetTxt(); renderOutbox();
+if(navigator.onLine!==false && outboxLoad().length)
+  toast("📤 "+outboxLoad().length+" export(s) waiting in the Outbox — open History to send");
+
+/* ================= #46 LABELS BRIDGE =================
+   Static snapshot (labels-data.js) of the PALLET LABELS sheet — no live fetch
+   at count time. Match = app brand id + flavor. No match -> nothing extra. */
+function normFlavorKey(s){
+  let k=String(s||"").toLowerCase().replace(/\s+/g," ").trim();
+  if(k==="vp"||k==="variety pack"||k==="variety packs") k="vp";
+  return k;
+}
+function labelEntryFor(brandId, flavor){
+  const snap=window.LABEL_SNAPSHOT; if(!snap||!snap.entries) return null;
+  return snap.entries[brandId+"|"+normFlavorKey(flavor)] || null;
+}
+function labelInfoHtml(brandId, flavor){
+  const e=labelEntryFor(brandId, flavor); if(!e) return "";
+  const bits=[];
+  if(e.sap) bits.push("SAP <b>"+esc(e.sap)+"</b>");
+  if(e.item) bits.push("Item Code <b>"+esc(e.item)+"</b>");
+  const build=[]; if(e.pack) build.push(esc(e.pack)); if(e.cases) build.push(fmt(e.cases)+" cases/pallet");
+  let h="<div class='labelinfo'>🏷️ <b>"+esc(e.desc||e.tab||"")+"</b>";
+  if(bits.length) h+=" · "+bits.join(" · ");
+  if(build.length) h+="<br>Build: "+build.join(" · ");
+  if(e.bestBy) h+="<br>Best By on label: <b>"+esc(e.bestBy)+"</b>";
+  h+=" <span class='lsnap'>(PALLET LABELS snapshot "+esc((window.LABEL_SNAPSHOT||{}).generated||"")+")</span></div>";
+  return h;
+}
+/* refresh the label line when the flavor changes (select or chips) */
+function refreshSpecLabels(){
+  try{ if(typeof showSpecInfo==="function"){
+    showSpecInfo("sSpecInfo", brandSel.value);
+    showSpecInfo("cSpecInfo", cBrandSel.value);
+  } }catch(e){}
+}
+["sFlavor","cFlavor"].forEach(id=>{ const el=$(id); if(el) el.addEventListener("change",refreshSpecLabels); });
+["sChips","cChips"].forEach(id=>{ const el=$(id); if(el) el.addEventListener("click",()=>setTimeout(refreshSpecLabels,0)); });
+refreshSpecLabels();
 </script>
 
 </body>
