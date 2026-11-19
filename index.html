@@ -113,6 +113,11 @@ input.warn-field{border-color:var(--warn);background:#1d1508;}
   background:var(--panel);color:var(--acc);font-size:26px;font-weight:900;cursor:pointer;user-select:none;}
 .stepper button:active{background:#0e2a33;}
 .stepper .val{min-width:64px;text-align:center;font-size:26px;font-weight:900;color:var(--txt);}
+.stepper input.val{width:84px;background:transparent;border:2px solid transparent;border-radius:10px;
+  padding:6px 2px;font-family:inherit;cursor:text;-moz-appearance:textfield;appearance:textfield;}
+.stepper input.val:focus{border-color:var(--acc);background:#0a1228;outline:none;}
+.stepper input.val.clamped{border-color:#ffb02e;}
+.stepper input.val::-webkit-outer-spin-button,.stepper input.val::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 #live-total{background:#0e2a33;border:1px solid var(--acc);border-radius:var(--r);
   padding:14px;margin-top:12px;text-align:center;}
 #live-total .n{font-size:34px;font-weight:900;color:var(--acc);}
@@ -328,12 +333,12 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <div><label class="f">Label Date</label><input type="text" id="fDate" placeholder="MM/DD/YYYY" autocomplete="off"></div>
     </div>
     <div class="row3">
-      <div><label class="f">Pallets</label><input type="number" id="fP" min="0" value="1"></div>
-      <div><label class="f">Rows</label><input type="number" id="fR" min="0" value="0"></div>
-      <div><label class="f">Cases</label><input type="number" id="fC" min="0" value="0"></div>
+      <div><label class="f">Pallets</label><input type="number" id="fP" min="0" inputmode="numeric" pattern="[0-9]*" value="1"></div>
+      <div><label class="f">Rows</label><input type="number" id="fR" min="0" inputmode="numeric" pattern="[0-9]*" value="0"></div>
+      <div><label class="f">Cases</label><input type="number" id="fC" min="0" inputmode="numeric" pattern="[0-9]*" value="0"></div>
     </div>
     <div class="row2">
-      <div><label class="f">Case Pack</label><input type="number" id="fPack" min="1" value="24"></div>
+      <div><label class="f">Case Pack</label><input type="number" id="fPack" min="1" inputmode="numeric" pattern="[0-9]*" value="24"></div>
       <div><label class="f">Location</label><input type="text" id="fLoc" placeholder="e.g. A-12-3" autocomplete="off"></div>
     </div>
     <label class="f">Notes</label><input type="text" id="fNotes" placeholder="optional" autocomplete="off">
@@ -348,7 +353,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
 <section class="tab" id="tab-count">
   <div class="card">
     <h2>🔢 Quick count &mdash; merged counter</h2>
-    <div class="note" style="margin-bottom:6px">Same P / R / C math as your cyber-count sheets. Tap (or hold) to count, LOG COUNT drops it in the table.</div>
+    <div class="note" style="margin-bottom:6px">Same P / R / C math as your cyber-count sheets. Tap (or hold) + / &minus; to count, or tap a number to type it in. LOG COUNT drops it in the table.</div>
     <label class="f">Brand</label><select id="cBrand"></select>
     <div class="note specinfo" id="cSpecInfo"></div>
     <label class="f">Flavor</label><select id="cFlavor"></select>
@@ -357,11 +362,11 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
     <label class="f">Quick shorthand (e.g. 3p 2r 5c)</label>
     <input type="text" id="cShort" placeholder="type counts, Enter to apply" autocomplete="off">
     <div class="stepper"><div class="lab">PALLETS<small id="cPInfo"></small></div>
-      <button data-s="P" data-d="-1">&minus;</button><div class="val" id="cP">0</div><button data-s="P" data-d="1">+</button></div>
+      <button data-s="P" data-d="-1">&minus;</button><input class="val" id="cP" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" value="0" aria-label="Pallets — tap to type a number"><button data-s="P" data-d="1">+</button></div>
     <div class="stepper"><div class="lab">ROWS<small id="cRInfo"></small></div>
-      <button data-s="R" data-d="-1">&minus;</button><div class="val" id="cR">0</div><button data-s="R" data-d="1">+</button></div>
+      <button data-s="R" data-d="-1">&minus;</button><input class="val" id="cR" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" value="0" aria-label="Rows — tap to type a number"><button data-s="R" data-d="1">+</button></div>
     <div class="stepper"><div class="lab">CASES<small id="cCInfo"></small></div>
-      <button data-s="C" data-d="-1">&minus;</button><div class="val" id="cC">0</div><button data-s="C" data-d="1">+</button></div>
+      <button data-s="C" data-d="-1">&minus;</button><input class="val" id="cC" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" value="0" aria-label="Cases — tap to type a number"><button data-s="C" data-d="1">+</button></div>
     <div class="presetrow" id="presetRow"><button class="btn ghost sm" data-preset="1,0,0">1P</button><button class="btn ghost sm" data-preset="1,1,0">1P+1R</button><button class="btn ghost sm" data-preset="2,0,0">2P</button><button class="btn ghost sm" data-preset="0,0,0" data-half="1">½P</button></div><div class="tmplrow" id="tmplRow"></div><button class="btn ghost sm" id="btnSaveTmpl" style="margin-bottom:8px">💾 Save as template</button><div id="live-total"><div class="n" id="cTotal">0</div><div class="d">TOTAL CANS &middot; <span id="cDetail"></span></div></div>
     <div class="row2">
       <div><label class="f">Location</label><input type="text" id="cLoc" placeholder="e.g. B-04-1" autocomplete="off"></div>
@@ -1113,10 +1118,12 @@ $("btnConfirm").addEventListener("click",()=>{
 
 /* ================= COUNT TAB ================= */
 const cnt={P:0,R:0,C:0};
+const CNT_MAX=9999;
+function setCntVal(id,v){ const el=$(id); if(el&&!el.dataset.editing) el.value=v; }
 function cntBrand(){ return brandById(cBrandSel.value); }
 function updCount(){
   const b=cntBrand();
-  $("cP").textContent=cnt.P; $("cR").textContent=cnt.R; $("cC").textContent=cnt.C;
+  setCntVal("cP",cnt.P); setCntVal("cR",cnt.R); setCntVal("cC",cnt.C);
   $("cPInfo").textContent="1 pallet = "+fmt(palletCans(b,b.c))+" cans";
   $("cRInfo").textContent="1 row = "+fmt(rowCans(b,b.c))+" cans";
   $("cCInfo").textContent="1 case = "+b.c+" cans";
@@ -1132,8 +1139,33 @@ function bindHold(btn,fn){ let t1,t2;
   ["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,end)); }
 document.querySelectorAll(".stepper button").forEach(btn=>bindHold(btn,()=>{
   const s=btn.dataset.s, d=+btn.dataset.d;
-  cnt[s]=Math.max(0,cnt[s]+d); updCount();
+  cnt[s]=Math.max(0,Math.min(CNT_MAX,cnt[s]+d)); updCount();
   const v=$("c"+s); v.classList.remove("tick"); void v.offsetWidth; v.classList.add("tick"); }));
+/* ---- typed entry: tap the number itself and type (same math as the steppers) ---- */
+["P","R","C"].forEach(s=>{
+  const el=$("c"+s); if(!el) return;
+  el.addEventListener("focus",()=>{ el.dataset.editing="1"; setTimeout(()=>{ try{ el.select(); }catch(e){} },0); });
+  el.addEventListener("input",()=>{
+    el.dataset.editing="1";
+    const digits=el.value.replace(/[^0-9]/g,"");
+    if(digits!==el.value) el.value=digits;
+    let n=digits===""?0:parseInt(digits,10);
+    if(n>CNT_MAX){ n=CNT_MAX; el.classList.add("clamped"); } else el.classList.remove("clamped");
+    cnt[s]=n; updCount();
+  });
+  const commit=()=>{
+    const over=parseInt((el.value||"").replace(/[^0-9]/g,"")||"0",10)>CNT_MAX;
+    delete el.dataset.editing;
+    el.value=cnt[s]; el.classList.remove("clamped");
+    updCount();
+    if(over) toast("Capped at "+fmt(CNT_MAX)+" — that number looked off.");
+  };
+  el.addEventListener("blur",commit);
+  el.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){ e.preventDefault(); el.blur(); }
+    if(e.key==="Escape"){ el.value=cnt[s]; el.blur(); }
+  });
+});
 cBrandSel.addEventListener("change",()=>{ updCount(); onBrandChange("count"); });
 cBrandSel.value=sticky("brand","popz"); updCount(); onBrandChange("count");
 $("sFlavor").addEventListener("change",()=>markChip("sChips",$("sFlavor").value));
