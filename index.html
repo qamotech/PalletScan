@@ -146,6 +146,8 @@ table.grid td{padding:8px 6px;border-top:1px solid var(--line);vertical-align:to
 .expflag.show{display:block;}
 .expflag.past{color:var(--bad);}
 .expflag.soon{color:var(--warn);}
+.lotdec{font-size:12.5px;font-weight:700;color:var(--acc);margin-top:5px;display:none;}
+.lotdec.show{display:block;}
 .hidden{display:none!important;}
 #toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#0e2a33;
   border:1px solid var(--acc);color:var(--txt);padding:12px 18px;border-radius:10px;
@@ -324,7 +326,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
     <div class="chips" id="sChips"></div>
     <div class="row2">
       <div><label class="f">Item / Code</label><input type="text" id="fItem" list="itemCodes" placeholder="e.g. VP, Gridlock" autocomplete="off"></div>
-      <div><label class="f">Lot</label><input type="text" id="fLot" placeholder="e.g. A234AO05626A" autocomplete="off"></div>
+      <div><label class="f">Lot</label><input type="text" id="fLot" placeholder="e.g. A234AO05626A" autocomplete="off"><div class="lotdec" id="fLotDec"></div></div>
     </div>
     <label class="f">Quick shorthand (e.g. 3p 2r 5c 7u)</label>
     <input type="text" id="fShort" placeholder="type pallets/rows/cases, Enter to apply" autocomplete="off">
@@ -373,7 +375,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
     <div class="presetrow" id="presetRow"><button class="btn ghost sm" data-preset="1,0,0">1P</button><button class="btn ghost sm" data-preset="1,1,0">1P+1R</button><button class="btn ghost sm" data-preset="2,0,0">2P</button><button class="btn ghost sm" data-preset="0,0,0" data-half="1">½P</button></div><div class="tmplrow" id="tmplRow"></div><button class="btn ghost sm" id="btnSaveTmpl" style="margin-bottom:8px">💾 Save as template</button><div id="live-total"><div class="n" id="cTotal">0</div><div class="d">TOTAL CANS &middot; <span id="cDetail"></span></div></div>
     <div class="row2">
       <div><label class="f">Location</label><input type="text" id="cLoc" placeholder="e.g. B-04-1" autocomplete="off"></div>
-      <div><label class="f">Lot (optional)</label><input type="text" id="cLot" placeholder="lot code" autocomplete="off"></div>
+      <div><label class="f">Lot (optional)</label><input type="text" id="cLot" placeholder="lot code" autocomplete="off"><div class="lotdec" id="cLotDec"></div></div>
     </div>
     <button class="btn ok" id="btnLogCount">✅ LOG COUNT</button>
     <button class="btn ghost sm" id="btnResetCount">Reset counters</button>
@@ -814,7 +816,7 @@ function renderQCard(q,i,refNode){
   };
   card.innerHTML='<div class="qh"><img src="'+q.url+'"><div><div style="font-size:16px"><b>'
     +brandIcon(b)+' '+b.name+'</b></div><div class="note">'+(p.flavor||"flavor not found")+'</div></div></div>'
-    +fld("🏷️ Item / Code",p.item,"item",1)+fld("🔖 Lot",p.lot,"lot",1)+fld("📅 Best By",p.bestBy,"bestBy",1)+fld("🗓️ Label Date",p.date,"date",1)
+    +fld("🏷️ Item / Code",p.item,"item",1)+fld("🔖 Lot",p.lot,"lot",1)+(lotDecodeText(p.lot)?'<div class="lotdec show" style="margin:2px 0 4px">'+esc(lotDecodeText(p.lot))+'</div>':"")+fld("📅 Best By",p.bestBy,"bestBy",1)+fld("🗓️ Label Date",p.date,"date",1)
     +fld("📦 Case Pack",p.pack||b.c)+fld("🏭 Pallets",(p.p!=null?p.p:1))+fld("📐 Rows",(p.r!=null?p.r:0))+fld("🔢 Cases",(p.cases!=null?p.cases:(p.c||0)))
     +(p.error?'<div class="fld"><b>Error</b><span class="miss">'+p.error+'</span></div>':"")
     +'<div class="qbtns"><button class="btn ok" data-qc="'+i+'">✓ CONFIRM</button>'
@@ -1035,7 +1037,7 @@ function openConfirm(p, idx){
   markChip("sChips",$("sFlavor").value);
   syncPack();
   $("fItem").value=p.item||"";
-  $("fLot").value=p.lot||"";
+  $("fLot").value=p.lot||""; updLotDec("fLot","fLotDec");
   $("fBestBy").value=p.bestBy||"";
   $("fDate").value=p.date||"";
   $("fShort").value="";
@@ -1053,6 +1055,7 @@ function openConfirm(p, idx){
   ["fItem","fLot"].forEach(id=>$(id).oninput=()=>{dupArmed=false;$("btnConfirm").classList.remove("armed");$("dupWarn").classList.remove("show");});
   brandSel.onchange=()=>{ syncPack(); updConfirmTotal(); onBrandChange("scan"); };
   $("fBestBy").oninput=checkExpiry;
+  $("fLot").addEventListener("input",()=>updLotDec("fLot","fLotDec"));
 }
 function brandIdByName(n){ const b=BRANDS.find(x=>x.name===n); return b?b.id:"other"; }
 function sticky(k,fb){ try{ return localStorage.getItem("palletscan_sticky_"+k)||fb; }catch(e){ return fb; } }
@@ -1091,6 +1094,34 @@ function checkExpiry(){ const el=$("expFlag"), d=parseBestBy($("fBestBy").value)
   const days=Math.round((d-new Date())/864e5);
   if(days<0){ el.textContent="EXPIRED "+Math.abs(days)+" days ago"; el.classList.add("show","past"); }
   else if(days<=60){ el.textContent="Expires in "+days+" days"; el.classList.add("show","soon"); } }
+/* Lot decode — Nathan's format (2026-11-19): [plant letter][3-digit line, opt][item code 1-2 letters][Julian day, 3 digits][year, 2 digits][shift letter, opt].
+   A = Baltimore, Arc Beverage Company. Best By derives from the lot's own production date — never inferred from old labels. */
+function parseLot(code){
+  const s=String(code||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  const m=s.match(/^([A-Z])(?:(\d{3}))?([A-Z]{0,2})(\d{3})(\d{2})([A-Z])?$/);
+  if(!m) return null;
+  const jul=parseInt(m[4],10); if(jul<1||jul>366) return null;
+  const yr=2000+parseInt(m[5],10);
+  const d=new Date(Date.UTC(yr,0,jul)); if(d.getUTCFullYear()!==yr) return null;
+  const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return { plant:m[1], plantName:(m[1]==="A"?"Baltimore":""), seg:m[2]||"", item:m[3]||"", julian:jul, year:yr, shift:m[6]||"",
+    prodStr:MON[d.getUTCMonth()]+" "+d.getUTCDate()+", "+yr,
+    prodISO:yr+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0") };
+}
+function lotBits(code){ const p=parseLot(code); if(!p) return null;
+  const bits=[p.plantName?("\u{1F3ED} "+p.plantName+" (Arc Beverage)"):("\u{1F3ED} Plant "+p.plant)];
+  if(p.seg) bits.push("Line "+p.seg);
+  if(p.item) bits.push("Item "+p.item);
+  bits.push("Made "+p.prodStr+" · Day "+p.julian);
+  if(p.shift) bits.push("Shift "+p.shift);
+  return bits; }
+function lotDecodeText(code){ const b=lotBits(code); return b? b.join(" · ") : ""; }
+function lotDecodeShort(code){ const p=parseLot(code); if(!p) return "";
+  return (p.plantName||("Plant "+p.plant))+" · Made "+p.prodStr; }
+function lotPlant(code){ const p=parseLot(code); return p? (p.plantName||p.plant) : ""; }
+function lotProdISO(code){ const p=parseLot(code); return p? p.prodISO : ""; }
+function updLotDec(inputId,decId){ const el=$(decId); if(!el) return;
+  const t=lotDecodeText($(inputId).value); el.textContent=t; el.classList.toggle("show",!!t); }
 $("fShort").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault();
   const s=parseShort($("fShort").value);
   $("fP").value=s.P; $("fR").value=s.R; $("fC").value=s.C; $("fU").value=s.U; updConfirmTotal(); }});
@@ -1183,6 +1214,7 @@ cBrandSel.addEventListener("change",()=>{ updCount(); onBrandChange("count"); })
 cBrandSel.value=sticky("brand","popz"); updCount(); onBrandChange("count");
 $("sFlavor").addEventListener("change",()=>markChip("sChips",$("sFlavor").value));
 $("cFlavor").addEventListener("change",()=>markChip("cChips",$("cFlavor").value));
+$("cLot").addEventListener("input",()=>updLotDec("cLot","cLotDec"));
 $("cShort").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault();
   const s=parseShort($("cShort").value); cnt.P=s.P; cnt.R=s.R; cnt.C=s.C; cnt.U=s.U; updCount(); }});
 $("btnResetCount").addEventListener("click",()=>{ cnt.P=cnt.R=cnt.C=cnt.U=0; updCount(); });
@@ -1237,7 +1269,7 @@ function renderTable(){
     const tr=document.createElement("tr");
     const flag=outlier(r)?" <span class='flag' title='Cases exceed a full pallet'>⚠</span>":"";
     tr.innerHTML="<td>"+r.ts+"</td><td>"+esc(r.scanner)+"</td><td>"+esc(r.brand)+"</td><td>"+esc(r.flavor||"")+"</td>"+
-      "<td>"+esc(r.item)+"</td><td>"+esc(r.lot)+"</td><td>"+esc(r.bestBy)+"</td>"+
+      "<td>"+esc(r.item)+"</td><td>"+esc(r.lot)+(lotDecodeShort(r.lot)?"<div class='lotdec show' style='margin-top:2px;font-size:11.5px'>"+esc(lotDecodeShort(r.lot))+"</div>":"")+"</td><td>"+esc(r.bestBy)+"</td>"+
       "<td>"+r.p+"</td><td>"+r.r+"</td><td>"+r.c+flag+"</td><td>"+(r.u||0)+"</td><td><b>"+fmt(r.cans)+"</b></td>"+
       "<td>"+esc(r.loc)+"</td>"+
       "<td style='white-space:nowrap'><button class='iconbtn' data-a='edit' data-i='"+i+"'>✎</button> "+
@@ -1291,10 +1323,10 @@ $("btnUndo").addEventListener("click",()=>{
 });
 
 /* ---- CSV / JSON ---- */
-const CSV_HEAD=["Timestamp","Scanner","Brand","Flavor","Item/Code","Lot","Best By","Label Date","Case Pack","Pallets","Rows","Cases","Units","Total Cans","Location","Notes"];
+const CSV_HEAD=["Timestamp","Scanner","Brand","Flavor","Item/Code","Lot","Best By","Label Date","Case Pack","Pallets","Rows","Cases","Units","Total Cans","Location","Notes","Plant","Production Date"];
 const csvCell=v=>{ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
 function buildCsv(rs){ return CSV_HEAD.join(",")+"\n"+rs.map(r=>
-  [r.ts,r.scanner,r.brand,r.flavor||"",r.item,r.lot,r.bestBy,r.date,r.pack,r.p,r.r,r.c,r.u||0,r.cans,r.loc,r.notes]
+  [r.ts,r.scanner,r.brand,r.flavor||"",r.item,r.lot,r.bestBy,r.date,r.pack,r.p,r.r,r.c,r.u||0,r.cans,r.loc,r.notes,lotPlant(r.lot),lotProdISO(r.lot)]
   .map(csvCell).join(",")).join("\n"); }
 function dl(name, text, type){ const blob=new Blob([text],{type:type});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
@@ -1920,7 +1952,7 @@ $("btnLiveStop").addEventListener("click",()=>stopLive(false));
       if(!s.rows.length) h+="<div class='note' style='padding:7px 2px'>No rows.</div>";
       s.rows.forEach(r=>{
         h+="<div class='histrow'><span>"+esc(r.brand||"")+(r.flavor?" "+esc(r.flavor):"")+"</span>"+
-          "<span class='note'>Lot "+esc(r.lot||"—")+"</span>"+
+          "<span class='note'>Lot "+esc(r.lot||"—")+(lotDecodeShort(r.lot)?" · "+esc(lotDecodeShort(r.lot)):"")+"</span>"+
           "<b>"+fmt(r.cans||0)+" cans</b>"+
           "<span class='note'>"+(r.p||0)+"p/"+(r.r||0)+"r/"+(r.c||0)+"c · "+esc(r.ts||"")+"</span></div>";
       });
@@ -1982,7 +2014,7 @@ $("btnLiveStop").addEventListener("click",()=>stopLive(false));
                                              : " (started "+fmtWhen(s.created||Date.now())+")"));
       L.push("  "+t.rows+" rows · "+fmt(t.pallets)+" pallets · "+fmt(t.cans)+" cans");
       s.rows.forEach(r=>{
-        L.push("  - "+(r.brand||"")+(r.flavor?" "+r.flavor:"")+" | Lot "+(r.lot||"—")+
+        L.push("  - "+(r.brand||"")+(r.flavor?" "+r.flavor:"")+" | Lot "+(r.lot||"—")+(lotDecodeShort(r.lot)?" ("+lotDecodeShort(r.lot)+")":"")+
           " | "+(r.p||0)+" plt, "+(r.r||0)+" rows, "+(r.c||0)+" cs"+((r.u||0)?", "+r.u+" loose":"")+" | "+fmt(r.cans||0)+" cans | "+(r.ts||""));
       });
     });
@@ -1994,7 +2026,7 @@ $("btnLiveStop").addEventListener("click",()=>stopLive(false));
     const out=[["Session"].concat(CSV_HEAD).join(",")];
     list.forEach(s=>{ s.rows.forEach(r=>{
       out.push([s.name,r.ts,r.scanner,r.brand,r.flavor||"",r.item,r.lot,r.bestBy,r.date,
-        r.pack,r.p,r.r,r.c,r.u||0,r.cans,r.loc,r.notes].map(csvCell).join(","));
+        r.pack,r.p,r.r,r.c,r.u||0,r.cans,r.loc,r.notes,lotPlant(r.lot),lotProdISO(r.lot)].map(csvCell).join(","));
     }); });
     return out.join("\n");
   }
@@ -2169,7 +2201,7 @@ function labelInfoHtml(brandId, flavor){
   let h="<div class='labelinfo'>🏷️ <b>"+esc(e.desc||e.tab||"")+"</b>";
   if(bits.length) h+=" · "+bits.join(" · ");
   if(build.length) h+="<br>Build: "+build.join(" · ");
-  if(e.bestBy) h+="<br>Best By on label: <b>"+esc(e.bestBy)+"</b>";
+  /* Best By is NOT shown from old labels (Nathan 2026-11-19) — it derives from the lot code. */
   h+=" <span class='lsnap'>(PALLET LABELS snapshot "+esc((window.LABEL_SNAPSHOT||{}).generated||"")+")</span></div>";
   return h;
 }
