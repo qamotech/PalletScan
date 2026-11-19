@@ -326,7 +326,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <div><label class="f">Item / Code</label><input type="text" id="fItem" list="itemCodes" placeholder="e.g. VP, Gridlock" autocomplete="off"></div>
       <div><label class="f">Lot</label><input type="text" id="fLot" placeholder="e.g. A234AO05626A" autocomplete="off"></div>
     </div>
-    <label class="f">Quick shorthand (e.g. 3p 2r 5c)</label>
+    <label class="f">Quick shorthand (e.g. 3p 2r 5c 7u)</label>
     <input type="text" id="fShort" placeholder="type pallets/rows/cases, Enter to apply" autocomplete="off">
     <div class="row2">
       <div><label class="f">Best By</label><input type="text" id="fBestBy" placeholder="MM/DD/YYYY" autocomplete="off"><div class="expflag" id="expFlag"></div></div>
@@ -337,7 +337,8 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <div><label class="f">Rows</label><input type="number" id="fR" min="0" inputmode="numeric" pattern="[0-9]*" value="0"></div>
       <div><label class="f">Cases</label><input type="number" id="fC" min="0" inputmode="numeric" pattern="[0-9]*" value="0"></div>
     </div>
-    <div class="row2">
+    <div class="row3">
+      <div><label class="f">Units (loose)</label><input type="number" id="fU" min="0" inputmode="numeric" pattern="[0-9]*" value="0"></div>
       <div><label class="f">Case Pack</label><input type="number" id="fPack" min="1" inputmode="numeric" pattern="[0-9]*" value="24"></div>
       <div><label class="f">Location</label><input type="text" id="fLoc" placeholder="e.g. A-12-3" autocomplete="off"></div>
     </div>
@@ -359,7 +360,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
     <label class="f">Flavor</label><select id="cFlavor"></select>
     <div class="chips" id="cChips"></div>
     <label class="f">Item / Code (optional)</label><input type="text" id="cItem" list="itemCodes" placeholder="e.g. VP, Summer Popz" autocomplete="off">
-    <label class="f">Quick shorthand (e.g. 3p 2r 5c)</label>
+    <label class="f">Quick shorthand (e.g. 3p 2r 5c 7u)</label>
     <input type="text" id="cShort" placeholder="type counts, Enter to apply" autocomplete="off">
     <div class="stepper"><div class="lab">PALLETS<small id="cPInfo"></small></div>
       <button data-s="P" data-d="-1">&minus;</button><input class="val" id="cP" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" value="0" aria-label="Pallets — tap to type a number"><button data-s="P" data-d="1">+</button></div>
@@ -367,6 +368,8 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <button data-s="R" data-d="-1">&minus;</button><input class="val" id="cR" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" value="0" aria-label="Rows — tap to type a number"><button data-s="R" data-d="1">+</button></div>
     <div class="stepper"><div class="lab">CASES<small id="cCInfo"></small></div>
       <button data-s="C" data-d="-1">&minus;</button><input class="val" id="cC" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" value="0" aria-label="Cases — tap to type a number"><button data-s="C" data-d="1">+</button></div>
+    <div class="stepper"><div class="lab">UNITS<small>loose cans · 1 unit = 1 can</small></div>
+      <button data-s="U" data-d="-1">&minus;</button><input class="val" id="cU" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" value="0" aria-label="Units (loose cans) — tap to type a number"><button data-s="U" data-d="1">+</button></div>
     <div class="presetrow" id="presetRow"><button class="btn ghost sm" data-preset="1,0,0">1P</button><button class="btn ghost sm" data-preset="1,1,0">1P+1R</button><button class="btn ghost sm" data-preset="2,0,0">2P</button><button class="btn ghost sm" data-preset="0,0,0" data-half="1">½P</button></div><div class="tmplrow" id="tmplRow"></div><button class="btn ghost sm" id="btnSaveTmpl" style="margin-bottom:8px">💾 Save as template</button><div id="live-total"><div class="n" id="cTotal">0</div><div class="d">TOTAL CANS &middot; <span id="cDetail"></span></div></div>
     <div class="row2">
       <div><label class="f">Location</label><input type="text" id="cLoc" placeholder="e.g. B-04-1" autocomplete="off"></div>
@@ -389,7 +392,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <thead><tr>
         <th class="selcol"><input type="checkbox" id="selAll" title="Select all"></th><th data-k="ts">Time</th><th data-k="scanner">Scanner</th><th data-k="brand">Brand</th><th data-k="flavor">Flavor</th>
         <th data-k="item">Item</th><th data-k="lot">Lot</th><th data-k="bestBy">Best&nbsp;By</th>
-        <th data-k="p">P</th><th data-k="r">R</th><th data-k="c">C</th>
+        <th data-k="p">P</th><th data-k="r">R</th><th data-k="c">C</th><th data-k="u">U</th>
         <th data-k="cans">Cans</th><th data-k="loc">Loc</th><th></th>
       </tr></thead>
       <tbody id="gridBody"></tbody>
@@ -424,6 +427,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
     <div class="totbar">
       <div class="tot"><div class="k">Grand total cans</div><div class="v" id="sCans">0</div></div>
       <div class="tot"><div class="k">Grand total pallets</div><div class="v" id="sPallets">0</div></div>
+      <div class="tot"><div class="k">Loose units</div><div class="v" id="sUnits">0</div></div>
     </div>
     <h2 style="margin-top:16px">By location</h2>
     <div id="locBody"><div class="note">—</div></div>
@@ -542,7 +546,7 @@ const casesPerPallet = b => Math.max(1, Math.round(b.p / b.c));
 const casesPerRow    = b => Math.max(1, Math.round(casesPerPallet(b) / b.rpp));
 const palletCans = (b,pack) => casesPerPallet(b) * pack;
 const rowCans    = (b,pack) => casesPerRow(b) * pack;
-const cansFor = (b,pack,P,R,C) => P*palletCans(b,pack) + R*rowCans(b,pack) + C*pack;
+const cansFor = (b,pack,P,R,C,U) => P*palletCans(b,pack) + R*rowCans(b,pack) + C*pack + (U||0);
 const casesFor = (b,P,R,C) => P*casesPerPallet(b) + R*casesPerRow(b) + C;
 
 /* ================= STATE + SESSIONS ================= */
@@ -596,10 +600,10 @@ function beep(f,d){ if(!sndOn()) return; f=f||880; d=d||0.12;
 function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||60); }catch(e){} }
 function buzzPat(n){ const P={success:[40,30,40],error:[90,50,90,50,90],tick:18,field:[25],done:[60,40,120]}; try{ if(navigator.vibrate&&P[n]) navigator.vibrate(P[n]); }catch(e){} }
 /* shorthand: "3p 2r 5c", "107p,+1p" */
-function parseShort(s){ const out={P:0,R:0,C:0}; if(!s) return out;
-  const mP=s.match(/(\d+)\s*p/gi), mR=s.match(/(\d+)\s*r/gi), mC=s.match(/(\d+)\s*c/gi);
+function parseShort(s){ const out={P:0,R:0,C:0,U:0}; if(!s) return out;
+  const mP=s.match(/(\d+)\s*p/gi), mR=s.match(/(\d+)\s*r/gi), mC=s.match(/(\d+)\s*c/gi), mU=s.match(/(\d+)\s*u/gi);
   const sum=a=>a?a.reduce((t,m)=>t+parseInt(m,10),0):0;
-  out.P=sum(mP); out.R=sum(mR); out.C=sum(mC); return out; }
+  out.P=sum(mP); out.R=sum(mR); out.C=sum(mC); out.U=sum(mU); return out; }
 /* wake lock */
 let wlOn = settings().wake !== false, wl=null;
 async function keepAwake(){ if(!wlOn) return;
@@ -631,7 +635,7 @@ document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("clic
 function setBadge(id,txt){ const b=$(id); if(!b) return; b.textContent=txt; b.classList.toggle("show",!!txt); }
 function updateTabBadges(){ try{
   setBadge("tabBadgeScan", (typeof photoQueue!=="undefined"&&photoQueue.length)?String(photoQueue.length):"");
-  const cb=cntBrand(), ct=cansFor(cb,cb.c,cnt.P,cnt.R,cnt.C);
+  const cb=cntBrand(), ct=cansFor(cb,cb.c,cnt.P,cnt.R,cnt.C,cnt.U);
   setBadge("tabBadgeCount", ct>0?fmt(ct):"");
   let sp=0; rows.forEach(r=>sp+=r.p); setBadge("tabBadgeSum", sp>0?sp+"P":"");
  }catch(e){} }
@@ -647,7 +651,7 @@ function renderSessionSel(){ const sel=$("sessionSel"); sel.innerHTML="";
 $("sessionSel").addEventListener("change",e=>{ setActive(e.target.value); });
 function setActive(id){ state.activeId=id; rows=S().rows; save();
   renderSessionSel(); updateBadge(); updateTabBadges(); renderTable(); renderSummary();
-  cnt.P=cnt.R=cnt.C=0; updCount(); }
+  cnt.P=cnt.R=cnt.C=cnt.U=0; updCount(); }
 $("btnNewSession").addEventListener("click",()=>{
   const name=prompt("New session name:", "Count "+new Date().toLocaleDateString("en-US",{month:"2-digit",day:"2-digit"}));
   if(!name) return;
@@ -784,11 +788,11 @@ function guessFlavor(brandId,text){
 function rowFromParsed(p){
   const b=brandById(p.brandId)||brandById("other");
   const pack=p.pack||b.c;
-  const P=(p.p!=null?p.p:1), R=p.r||0, C=(p.cases!=null?p.cases:(p.c||0));
+  const P=(p.p!=null?p.p:1), R=p.r||0, C=(p.cases!=null?p.cases:(p.c||0)), U=p.u||0;
   return {ts:stamp(), scanner:scanner()||"—", brand:b.name, brandId:b.id,
     flavor:p.flavor||"", item:p.item||"", lot:(p.lot||"").trim(),
     bestBy:p.bestBy||"", date:p.date||"",
-    pack:pack, p:P, r:R, c:C, cans:cansFor(b,pack,P,R,C),
+    pack:pack, p:P, r:R, c:C, u:U, cans:cansFor(b,pack,P,R,C,U),
     loc:lastLoc(), notes:(p.sap?("SAP "+p.sap):"")};
 }
 function renderQCard(q,i,refNode){
@@ -1029,6 +1033,7 @@ function openConfirm(p, idx){
   $("fShort").value="";
   $("fP").value=p.p!=null?p.p:1;
   $("fR").value=p.r||0; $("fC").value=p.cases!=null?p.cases:(p.c||0);
+  $("fU").value=p.u||0;
   if(p.pack) $("fPack").value=p.pack;
   $("fLoc").value=p.loc||lastLoc();
   $("fNotes").value=p.notes||(p.sap?("SAP "+p.sap):"");
@@ -1036,7 +1041,7 @@ function openConfirm(p, idx){
   markFound(p.found||{});
   updConfirmTotal(); checkExpiry();
   card.scrollIntoView({behavior:"smooth"});
-  ["fP","fR","fC","fPack"].forEach(id=>$(id).oninput=()=>{dupArmed=false;$("btnConfirm").classList.remove("armed");updConfirmTotal();});
+  ["fP","fR","fC","fU","fPack"].forEach(id=>$(id).oninput=()=>{dupArmed=false;$("btnConfirm").classList.remove("armed");updConfirmTotal();});
   ["fItem","fLot"].forEach(id=>$(id).oninput=()=>{dupArmed=false;$("btnConfirm").classList.remove("armed");$("dupWarn").classList.remove("show");});
   brandSel.onchange=()=>{ syncPack(); updConfirmTotal(); onBrandChange("scan"); };
   $("fBestBy").oninput=checkExpiry;
@@ -1063,12 +1068,12 @@ function markFound(f){ [["fItem","item"],["fLot","lot"],["fBestBy","bestBy"],["f
   .forEach(([id,k])=>$(id).classList.toggle("warn-field", !$(id).value && !f[k])); }
 function curVals(){
   const b=brandById(brandSel.value), pack=+$("fPack").value||b.c;
-  return {b,pack,P:+$("fP").value||0,R:+$("fR").value||0,C:+$("fC").value||0}; }
+  return {b,pack,P:+$("fP").value||0,R:+$("fR").value||0,C:+$("fC").value||0,U:Math.max(0,+$("fU").value||0)}; }
 function updConfirmTotal(){
-  const {b,pack,P,R,C}=curVals();
-  const cans=cansFor(b,pack,P,R,C), cs=casesFor(b,P,R,C);
+  const {b,pack,P,R,C,U}=curVals();
+  const cans=cansFor(b,pack,P,R,C,U), cs=casesFor(b,P,R,C);
   $("confirm-total").innerHTML="Computed: <b style='color:var(--acc)'>"+fmt(cans)+" cans</b>"+
-    " · "+fmt(cs)+" cases ("+P+"P + "+R+"R + "+C+"C, pack "+pack+")";
+    " · "+fmt(cs)+" cases ("+P+"P + "+R+"R + "+C+"C"+(U?" + "+U+"U loose":"")+", pack "+pack+")";
 }
 function parseBestBy(s){ const m=String(s||"").match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
   if(!m) return null; let y=+m[3]; if(y<100) y+=2000;
@@ -1080,7 +1085,7 @@ function checkExpiry(){ const el=$("expFlag"), d=parseBestBy($("fBestBy").value)
   else if(days<=60){ el.textContent="Expires in "+days+" days"; el.classList.add("show","soon"); } }
 $("fShort").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault();
   const s=parseShort($("fShort").value);
-  $("fP").value=s.P; $("fR").value=s.R; $("fC").value=s.C; updConfirmTotal(); }});
+  $("fP").value=s.P; $("fR").value=s.R; $("fC").value=s.C; $("fU").value=s.U; updConfirmTotal(); }});
 document.querySelectorAll("#confirm-card input").forEach(i=>i.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&i.id!=="fShort"){ e.preventDefault(); $("btnConfirm").click(); }}));
 $("btnCancelConfirm").addEventListener("click",()=>$("confirm-card").classList.add("hidden"));
@@ -1088,7 +1093,7 @@ function dupCount(lot, skipIdx){ if(!lot) return 0;
   const l=lot.trim().toLowerCase();
   return rows.filter((r,i)=>i!==skipIdx && String(r.lot||"").trim().toLowerCase()===l).length; }
 $("btnConfirm").addEventListener("click",()=>{
-  const {b,pack,P,R,C}=curVals();
+  const {b,pack,P,R,C,U}=curVals();
   const lot=$("fLot").value.trim();
   if(editingIndex<0 && !dupArmed){
     const n=dupCount(lot, -1);
@@ -1104,7 +1109,7 @@ $("btnConfirm").addEventListener("click",()=>{
     flavor:$("sFlavor").value,
     item:$("fItem").value.trim(), lot:lot,
     bestBy:$("fBestBy").value.trim(), date:$("fDate").value.trim(),
-    pack:pack, p:P, r:R, c:C, cans:cansFor(b,pack,P,R,C),
+    pack:pack, p:P, r:R, c:C, u:U, cans:cansFor(b,pack,P,R,C,U),
     loc:$("fLoc").value.trim(), notes:$("fNotes").value.trim()};
   if(editingIndex>=0){ rows[editingIndex]=row; toast("Row updated"); }
   else { rows.push(row); toast("Added — "+fmt(row.cans)+" cans"); speak(row.p+" pallet"+(row.p==1?"":"s")+", "+fmt(row.cans)+" cans logged"); }
@@ -1117,19 +1122,19 @@ $("btnConfirm").addEventListener("click",()=>{
 });
 
 /* ================= COUNT TAB ================= */
-const cnt={P:0,R:0,C:0};
+const cnt={P:0,R:0,C:0,U:0};
 const CNT_MAX=9999;
 function setCntVal(id,v){ const el=$(id); if(el&&!el.dataset.editing) el.value=v; }
 function cntBrand(){ return brandById(cBrandSel.value); }
 function updCount(){
   const b=cntBrand();
-  setCntVal("cP",cnt.P); setCntVal("cR",cnt.R); setCntVal("cC",cnt.C);
+  setCntVal("cP",cnt.P); setCntVal("cR",cnt.R); setCntVal("cC",cnt.C); setCntVal("cU",cnt.U);
   $("cPInfo").textContent="1 pallet = "+fmt(palletCans(b,b.c))+" cans";
   $("cRInfo").textContent="1 row = "+fmt(rowCans(b,b.c))+" cans";
   $("cCInfo").textContent="1 case = "+b.c+" cans";
-  const t=cansFor(b,b.c,cnt.P,cnt.R,cnt.C);
+  const t=cansFor(b,b.c,cnt.P,cnt.R,cnt.C,cnt.U);
   $("cTotal").textContent=fmt(t);
-  $("cDetail").textContent=cnt.P+"P + "+cnt.R+"R + "+cnt.C+"C · "+b.spec;
+  $("cDetail").textContent=cnt.P+"P + "+cnt.R+"R + "+cnt.C+"C + "+cnt.U+"U · "+b.spec;
 }
 function bindHold(btn,fn){ let t1,t2;
   const start=e=>{ e.preventDefault(); fn();
@@ -1142,7 +1147,7 @@ document.querySelectorAll(".stepper button").forEach(btn=>bindHold(btn,()=>{
   cnt[s]=Math.max(0,Math.min(CNT_MAX,cnt[s]+d)); updCount();
   const v=$("c"+s); v.classList.remove("tick"); void v.offsetWidth; v.classList.add("tick"); }));
 /* ---- typed entry: tap the number itself and type (same math as the steppers) ---- */
-["P","R","C"].forEach(s=>{
+["P","R","C","U"].forEach(s=>{
   const el=$("c"+s); if(!el) return;
   el.addEventListener("focus",()=>{ el.dataset.editing="1"; setTimeout(()=>{ try{ el.select(); }catch(e){} },0); });
   el.addEventListener("input",()=>{
@@ -1171,24 +1176,24 @@ cBrandSel.value=sticky("brand","popz"); updCount(); onBrandChange("count");
 $("sFlavor").addEventListener("change",()=>markChip("sChips",$("sFlavor").value));
 $("cFlavor").addEventListener("change",()=>markChip("cChips",$("cFlavor").value));
 $("cShort").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault();
-  const s=parseShort($("cShort").value); cnt.P=s.P; cnt.R=s.R; cnt.C=s.C; updCount(); }});
-$("btnResetCount").addEventListener("click",()=>{ cnt.P=cnt.R=cnt.C=0; updCount(); });
+  const s=parseShort($("cShort").value); cnt.P=s.P; cnt.R=s.R; cnt.C=s.C; cnt.U=s.U; updCount(); }});
+$("btnResetCount").addEventListener("click",()=>{ cnt.P=cnt.R=cnt.C=cnt.U=0; updCount(); });
 $("btnLogCount").addEventListener("click",()=>{
   const b=cntBrand();
-  if(!cnt.P&&!cnt.R&&!cnt.C){ toast("Nothing to log — tap + first."); return; }
+  if(!cnt.P&&!cnt.R&&!cnt.C&&!cnt.U){ toast("Nothing to log — tap + or type a number first."); return; }
   const lot=$("cLot").value.trim();
   const n=dupCount(lot,-1);
   if(lot&&n>0&&!confirm("Lot "+lot+" already scanned "+n+"x this session. Log anyway?")) return;
   const row={ts:stamp(), scanner:scanner()||"—", brand:b.name, brandId:b.id,
     flavor:$("cFlavor").value,
     item:$("cItem").value.trim(), lot:lot, bestBy:"", date:"", pack:b.c,
-    p:cnt.P, r:cnt.R, c:cnt.C, cans:cansFor(b,b.c,cnt.P,cnt.R,cnt.C),
+    p:cnt.P, r:cnt.R, c:cnt.C, u:cnt.U, cans:cansFor(b,b.c,cnt.P,cnt.R,cnt.C,cnt.U),
     loc:$("cLoc").value.trim(), notes:"quick count"};
   rows.push(row);
   if(row.loc) lastLocCache=row.loc;
   setSticky("brand",b.id);
   beep(1040,0.12); buzz(60);
-  save(); updateBadge(); updateTabBadges(); cnt.P=cnt.R=cnt.C=0; updCount();
+  save(); updateBadge(); updateTabBadges(); cnt.P=cnt.R=cnt.C=cnt.U=0; updCount();
   toast("Count logged — "+fmt(row.cans)+" cans");
 });
 
@@ -1221,7 +1226,7 @@ function renderTable(){
     const flag=outlier(r)?" <span class='flag' title='Cases exceed a full pallet'>⚠</span>":"";
     tr.innerHTML="<td>"+r.ts+"</td><td>"+esc(r.scanner)+"</td><td>"+esc(r.brand)+"</td><td>"+esc(r.flavor||"")+"</td>"+
       "<td>"+esc(r.item)+"</td><td>"+esc(r.lot)+"</td><td>"+esc(r.bestBy)+"</td>"+
-      "<td>"+r.p+"</td><td>"+r.r+"</td><td>"+r.c+flag+"</td><td><b>"+fmt(r.cans)+"</b></td>"+
+      "<td>"+r.p+"</td><td>"+r.r+"</td><td>"+r.c+flag+"</td><td>"+(r.u||0)+"</td><td><b>"+fmt(r.cans)+"</b></td>"+
       "<td>"+esc(r.loc)+"</td>"+
       "<td style='white-space:nowrap'><button class='iconbtn' data-a='edit' data-i='"+i+"'>✎</button> "+
       "<button class='iconbtn swipe-act' data-a='dup' data-i='"+i+"' title='Duplicate'>⧉</button> "+
@@ -1229,11 +1234,11 @@ function renderTable(){
     tb.appendChild(tr);
   });
   if(!rows.length)
-    tb.innerHTML="<tr><td colspan='13' style='text-align:center;color:var(--dim);padding:20px'>No rows yet.<br><br>"+
+    tb.innerHTML="<tr><td colspan='14' style='text-align:center;color:var(--dim);padding:20px'>No rows yet.<br><br>"+
       "<button class='btn sm' style='max-width:280px;margin:0 auto' onclick=\"document.querySelector('[data-t=tab-scan]').click()\">GO TO SCAN</button><br>"+
       "<button class='btn ghost sm' style='max-width:280px;margin:8px auto 0' onclick=\"document.querySelector('[data-t=tab-count]').click()\">GO TO COUNT</button></td></tr>";
   else if(!v.length)
-    tb.innerHTML="<tr><td colspan='13' style='text-align:center;color:var(--dim);padding:20px'>No rows match the filter.</td></tr>";
+    tb.innerHTML="<tr><td colspan='14' style='text-align:center;color:var(--dim);padding:20px'>No rows match the filter.</td></tr>";
   $("tRows").textContent=rows.length;
   $("tPallets").textContent=fmt(pallets);
   $("tCans").textContent=fmt(cans);
@@ -1246,7 +1251,7 @@ function renderTable(){
     if(b.dataset.a==="dup"){ const r0=rows[i]; const cp=JSON.parse(JSON.stringify(r0)); cp.ts=stamp(); rows.splice(i+1,0,cp); save(); renderTable(); toast("Row duplicated"); beep(1040,0.1); }
      else if(b.dataset.a==="edit"){ const r=rows[i];
       openConfirm({brandId:r.brandId||brandIdByName(r.brand), flavor:r.flavor, item:r.item, lot:r.lot,
-        bestBy:r.bestBy, date:r.date, p:r.p, r:r.r, cases:r.c, pack:r.pack,
+        bestBy:r.bestBy, date:r.date, p:r.p, r:r.r, cases:r.c, u:r.u||0, pack:r.pack,
         loc:r.loc, notes:r.notes, found:{item:1,lot:1}}, i);
       document.querySelector('[data-t="tab-scan"]').click();
     } else delRow(i);
@@ -1274,10 +1279,10 @@ $("btnUndo").addEventListener("click",()=>{
 });
 
 /* ---- CSV / JSON ---- */
-const CSV_HEAD=["Timestamp","Scanner","Brand","Flavor","Item/Code","Lot","Best By","Label Date","Case Pack","Pallets","Rows","Cases","Total Cans","Location","Notes"];
+const CSV_HEAD=["Timestamp","Scanner","Brand","Flavor","Item/Code","Lot","Best By","Label Date","Case Pack","Pallets","Rows","Cases","Units","Total Cans","Location","Notes"];
 const csvCell=v=>{ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
 function buildCsv(rs){ return CSV_HEAD.join(",")+"\n"+rs.map(r=>
-  [r.ts,r.scanner,r.brand,r.flavor||"",r.item,r.lot,r.bestBy,r.date,r.pack,r.p,r.r,r.c,r.cans,r.loc,r.notes]
+  [r.ts,r.scanner,r.brand,r.flavor||"",r.item,r.lot,r.bestBy,r.date,r.pack,r.p,r.r,r.c,r.u||0,r.cans,r.loc,r.notes]
   .map(csvCell).join(",")).join("\n"); }
 function dl(name, text, type){ const blob=new Blob([text],{type:type});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
@@ -1326,10 +1331,10 @@ function parseCsv(text){
   for(let i=1;i<lines.length;i++){ const c=splitCsvLine(lines[i]); if(!c.length) continue;
     const g=n=>{ const j=idx(n); return j>=0?(c[j]||"").trim():""; };
     const b=brandById(brandIdByName(g("brand")));
-    const P=+g("pallets")||0,R=+g("rows")||0,C=+g("cases")||0,pack=+g("case pack")||b.c;
+    const P=+g("pallets")||0,R=+g("rows")||0,C=+g("cases")||0,U=+g("units")||0,pack=+g("case pack")||b.c;
     out.push({ts:g("timestamp")||stamp(),scanner:g("scanner")||"—",brand:g("brand")||b.name,
       brandId:b.id,flavor:g("flavor"),item:g("item/code"),lot:g("lot"),bestBy:g("best by"),date:g("label date"),
-      pack:pack,p:P,r:R,c:C,cans:+g("total cans")||cansFor(b,pack,P,R,C),
+      pack:pack,p:P,r:R,c:C,u:U,cans:+g("total cans")||cansFor(b,pack,P,R,C,U),
       loc:g("location"),notes:g("notes")}); }
   return out; }
 function splitCsvLine(line){ const out=[]; let cur="",q=false;
@@ -1344,16 +1349,16 @@ $("btnClear").addEventListener("click",()=>{
 
 /* ================= SUMMARY ================= */
 function renderSummary(){
-  const by={}, loc={}; let cans=0,pallets=0;
-  rows.forEach(r=>{ cans+=r.cans; pallets+=r.p;
-    const b=by[r.brand]=by[r.brand]||{rows:0,cans:0,pallets:0};
-    b.rows++; b.cans+=r.cans; b.pallets+=r.p;
+  const by={}, loc={}; let cans=0,pallets=0,units=0;
+  rows.forEach(r=>{ cans+=r.cans; pallets+=r.p; units+=r.u||0;
+    const b=by[r.brand]=by[r.brand]||{rows:0,cans:0,pallets:0,units:0};
+    b.rows++; b.cans+=r.cans; b.pallets+=r.p; b.units+=r.u||0;
     const l=loc[r.loc||"(no location)"]=loc[r.loc||"(no location)"]||{rows:0,cans:0};
     l.rows++; l.cans+=r.cans; });
   const names=Object.keys(by).sort((a,b)=>by[b].cans-by[a].cans);
   $("sumBody").innerHTML=names.length? names.map(n=>
     "<div class='sumrow'><span>"+esc(n)+" <small style='color:var(--dim)'>"+by[n].rows+" tags</small></span>"+
-    "<b>"+fmt(by[n].cans)+" cans · "+fmt(by[n].pallets)+" plt</b></div>").join("")
+    "<b>"+fmt(by[n].cans)+" cans · "+fmt(by[n].pallets)+" plt"+(by[n].units?" · "+fmt(by[n].units)+" loose":"")+"</b></div>").join("")
     : "<div class='note'>Nothing counted yet.</div>";
   const ln=Object.keys(loc).sort((a,b)=>loc[b].cans-loc[a].cans);
   $("locBody").innerHTML=ln.length? ln.map(n=>
@@ -1361,6 +1366,7 @@ function renderSummary(){
     : "<div class='note'>—</div>";
   $("sCans").textContent=fmt(cans);
   $("sPallets").textContent=fmt(pallets);
+  const su=$("sUnits"); if(su) su.textContent=fmt(units);
   const el=Date.now()-S().created, h=Math.floor(el/36e5), m=Math.floor(el%36e5/6e4);
   $("sessInfo").innerHTML="Session: <b style='color:var(--txt)'>"+esc(S().name)+"</b> · "+
     rows.length+" rows · elapsed "+h+"h "+m+"m";
@@ -1472,8 +1478,8 @@ function rotateHintFor(txt){
 document.querySelectorAll("#presetRow [data-preset]").forEach(b=>{
   b.addEventListener("click",()=>{
     const [p,r,c]=b.dataset.preset.split(",").map(Number);
-    if(b.dataset.half){ const br=cntBrand(); cnt.P=0; cnt.R=Math.max(1,Math.round((br.rpp||10)/2)); cnt.C=0; }
-    else { cnt.P=p; cnt.R=r; cnt.C=c; }
+    if(b.dataset.half){ const br=cntBrand(); cnt.P=0; cnt.R=Math.max(1,Math.round((br.rpp||10)/2)); cnt.C=0; cnt.U=0; }
+    else { cnt.P=p; cnt.R=r; cnt.C=c; cnt.U=0; }
     updCount(); buzzPat("tick"); toast("Preset: "+b.textContent.trim());
   });
 });
@@ -1486,17 +1492,17 @@ function renderTmpls(){
   Object.keys(t).forEach(k=>{
     if(k.split("|")[0]!==b.id) return;
     const v=t[k], chip=document.createElement("button");
-    chip.className="tmplchip"; chip.textContent="📌 "+v.name+" ("+v.p+"P "+v.r+"R "+v.c+"C)";
-    chip.addEventListener("click",()=>{ cnt.P=v.p; cnt.R=v.r; cnt.C=v.c; updCount(); buzzPat("tick"); toast("Template applied"); });
+    chip.className="tmplchip"; chip.textContent="📌 "+v.name+" ("+v.p+"P "+v.r+"R "+v.c+"C"+(v.u?" "+v.u+"U":"")+")";
+    chip.addEventListener("click",()=>{ cnt.P=v.p; cnt.R=v.r; cnt.C=v.c; cnt.U=v.u||0; updCount(); buzzPat("tick"); toast("Template applied"); });
     chip.addEventListener("contextmenu",e=>{ e.preventDefault(); delete t[k]; save(); renderTmpls(); toast("Template deleted"); });
     row.appendChild(chip);
   });
 }
 $("btnSaveTmpl").addEventListener("click",()=>{
   const b=cntBrand(), t=getTmpls();
-  const name=prompt("Template name:",""+cnt.P+"P "+cnt.R+"R "+cnt.C+"C");
+  const name=prompt("Template name:",""+cnt.P+"P "+cnt.R+"R "+cnt.C+"C"+(cnt.U?" "+cnt.U+"U":""));
   if(!name) return;
-  t[b.id+"|"+Date.now()]={name:name,p:cnt.P,r:cnt.R,c:cnt.C};
+  t[b.id+"|"+Date.now()]={name:name,p:cnt.P,r:cnt.R,c:cnt.C,u:cnt.U};
   save(); renderTmpls(); toast("📌 Template saved (long-press chip to delete)");
 });
 // re-render templates whenever brand changes
@@ -1507,9 +1513,9 @@ const _updCount=updCount;
 updCount=function(){
   _updCount();
   try{
-    const b=cntBrand(), t=cansFor(b,b.c,cnt.P,cnt.R,cnt.C);
+    const b=cntBrand(), t=cansFor(b,b.c,cnt.P,cnt.R,cnt.C,cnt.U);
     const cases=(t/b.c), pallets=(t/b.p);
-    $("cDetail").textContent=cnt.P+"P + "+cnt.R+"R + "+cnt.C+"C · "+b.spec+" · ≈"+cases.toFixed(1)+" cases · "+pallets.toFixed(2)+" pallets";
+    $("cDetail").textContent=cnt.P+"P + "+cnt.R+"R + "+cnt.C+"C + "+cnt.U+"U loose · "+b.spec+" · ≈"+cases.toFixed(1)+" cases · "+pallets.toFixed(2)+" pallets";
   }catch(e){}
 };
 
@@ -1550,10 +1556,10 @@ renderTable=function(){
       });
     }
     // totals footer over filtered view
-    const v=viewRows(); let fp=0,fr=0,fc=0,fcans=0;
-    v.forEach(x=>{ fp+=x.r.p||0; fr+=x.r.r||0; fc+=x.r.c||0; fcans+=x.r.cans||0; });
+    const v=viewRows(); let fp=0,fr=0,fc=0,fu=0,fcans=0;
+    v.forEach(x=>{ fp+=x.r.p||0; fr+=x.r.r||0; fc+=x.r.c||0; fu+=x.r.u||0; fcans+=x.r.cans||0; });
     const ft=$("gridFoot");
-    if(ft) ft.innerHTML="<tr><td></td><td colspan='7' style='text-align:right'>Filtered totals:</td><td>"+fp+"</td><td>"+fr+"</td><td>"+fc+"</td><td><b>"+fmt(fcans)+"</b></td><td></td><td></td></tr>";
+    if(ft) ft.innerHTML="<tr><td></td><td colspan='7' style='text-align:right'>Filtered totals:</td><td>"+fp+"</td><td>"+fr+"</td><td>"+fc+"</td><td>"+fu+"</td><td><b>"+fmt(fcans)+"</b></td><td></td><td></td></tr>";
     renderBulkBar(); updateQuota();
   }catch(e){}
 };
@@ -1965,7 +1971,7 @@ $("btnLiveStop").addEventListener("click",()=>stopLive(false));
       L.push("  "+t.rows+" rows · "+fmt(t.pallets)+" pallets · "+fmt(t.cans)+" cans");
       s.rows.forEach(r=>{
         L.push("  - "+(r.brand||"")+(r.flavor?" "+r.flavor:"")+" | Lot "+(r.lot||"—")+
-          " | "+(r.p||0)+" plt, "+(r.r||0)+" rows, "+(r.c||0)+" cs | "+fmt(r.cans||0)+" cans | "+(r.ts||""));
+          " | "+(r.p||0)+" plt, "+(r.r||0)+" rows, "+(r.c||0)+" cs"+((r.u||0)?", "+r.u+" loose":"")+" | "+fmt(r.cans||0)+" cans | "+(r.ts||""));
       });
     });
     L.push("");
@@ -1976,7 +1982,7 @@ $("btnLiveStop").addEventListener("click",()=>stopLive(false));
     const out=[["Session"].concat(CSV_HEAD).join(",")];
     list.forEach(s=>{ s.rows.forEach(r=>{
       out.push([s.name,r.ts,r.scanner,r.brand,r.flavor||"",r.item,r.lot,r.bestBy,r.date,
-        r.pack,r.p,r.r,r.c,r.cans,r.loc,r.notes].map(csvCell).join(","));
+        r.pack,r.p,r.r,r.c,r.u||0,r.cans,r.loc,r.notes].map(csvCell).join(","));
     }); });
     return out.join("\n");
   }
