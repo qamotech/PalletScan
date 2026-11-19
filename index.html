@@ -377,6 +377,8 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
     </div>
     <button class="btn ok" id="btnLogCount">✅ LOG COUNT</button>
     <button class="btn ghost sm" id="btnResetCount">Reset counters</button>
+    <button class="btn" id="btnCsvCount" style="margin-top:10px">📥 EXPORT CSV — opens in Sheets / Excel</button>
+    <div class="note" style="margin-top:4px">Exports everything logged in this session so far.</div>
   </div>
 </section>
 
@@ -618,6 +620,12 @@ document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("clic
   if(b.dataset.t==="tab-table") renderTable();
   if(b.dataset.t==="tab-sum") renderSummary();
 }));
+/* deep link: home-screen Count shortcut (?tab=count or #count) lands on the Count tab */
+(function(){ try{
+  const q=new URLSearchParams(location.search);
+  const t=(q.get("tab")||(location.hash||"").replace(/^#/,"")||"").toLowerCase();
+  if(t==="count"){ const b=document.querySelector('[data-t="tab-count"]'); if(b) b.click(); }
+}catch(e){} })();
 /* v7: swipe-left on table rows reveals duplicate/delete */
 (function(){ const tb=document.getElementById("gridBody"); if(!tb) return;
   let sx=0, srow=null;
@@ -1195,6 +1203,10 @@ $("btnLogCount").addEventListener("click",()=>{
   beep(1040,0.12); buzz(60);
   save(); updateBadge(); updateTabBadges(); cnt.P=cnt.R=cnt.C=cnt.U=0; updCount();
   toast("Count logged — "+fmt(row.cans)+" cans");
+});
+$("btnCsvCount").addEventListener("click",()=>{
+  if(!rows.length){ toast("Nothing to export yet — log a count first."); return; }
+  $("btnCsv").click();
 });
 
 /* ================= TABLE ================= */
