@@ -122,6 +122,9 @@ input.warn-field{border-color:var(--warn);background:#1d1508;}
   padding:14px;margin-top:12px;text-align:center;}
 #live-total .n{font-size:34px;font-weight:900;color:var(--acc);}
 #live-total .d{font-size:12px;color:var(--dim);margin-top:4px;}
+#live-cases{background:#0e2a33;border:1px solid var(--acc);border-radius:var(--r);
+  padding:9px 14px;margin-top:8px;text-align:center;font-size:19px;font-weight:800;color:var(--txt);}
+#live-cases .cl{font-size:12px;color:var(--dim);letter-spacing:.6px;margin-right:8px;}
 table.grid{width:100%;border-collapse:collapse;font-size:13px;}
 table.grid th{background:#0d1622;color:var(--acc);text-align:left;padding:8px 6px;
   position:sticky;top:0;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;cursor:pointer;user-select:none;}
@@ -372,7 +375,7 @@ nav.tabs button.on::after{content:"";position:absolute;left:12%;right:12%;top:0;
       <button data-s="C" data-d="-1">&minus;</button><input class="val" id="cC" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" value="0" aria-label="Cases — tap to type a number"><button data-s="C" data-d="1">+</button></div>
     <div class="stepper"><div class="lab">UNITS<small>loose cans · 1 unit = 1 can</small></div>
       <button data-s="U" data-d="-1">&minus;</button><input class="val" id="cU" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999" step="1" value="0" aria-label="Units (loose cans) — tap to type a number"><button data-s="U" data-d="1">+</button></div>
-    <div class="presetrow" id="presetRow"><button class="btn ghost sm" data-preset="1,0,0">1P</button><button class="btn ghost sm" data-preset="1,1,0">1P+1R</button><button class="btn ghost sm" data-preset="2,0,0">2P</button><button class="btn ghost sm" data-preset="0,0,0" data-half="1">½P</button></div><div class="tmplrow" id="tmplRow"></div><button class="btn ghost sm" id="btnSaveTmpl" style="margin-bottom:8px">💾 Save as template</button><div id="live-total"><div class="n" id="cTotal">0</div><div class="d">TOTAL CANS &middot; <span id="cDetail"></span></div></div>
+    <div class="presetrow" id="presetRow"><button class="btn ghost sm" data-preset="1,0,0">1P</button><button class="btn ghost sm" data-preset="1,1,0">1P+1R</button><button class="btn ghost sm" data-preset="2,0,0">2P</button><button class="btn ghost sm" data-preset="0,0,0" data-half="1">½P</button></div><div class="tmplrow" id="tmplRow"></div><button class="btn ghost sm" id="btnSaveTmpl" style="margin-bottom:8px">💾 Save as template</button><div id="live-total"><div class="n" id="cTotal">0</div><div class="d">TOTAL CANS &middot; <span id="cDetail"></span></div></div><div id="live-cases"><span class="cl">TOTAL CASES</span><span id="cCases">0 cases</span></div>
     <div class="row2">
       <div><label class="f">Location</label><input type="text" id="cLoc" placeholder="e.g. B-04-1" autocomplete="off"></div>
       <div><label class="f">Lot (optional)</label><input type="text" id="cLot" placeholder="lot code" autocomplete="off"><div class="lotdec" id="cLotDec"></div></div>
@@ -529,7 +532,7 @@ const BRANDS = [
    flavors:["Berry","Peach","Kiwi Guava","Watermelon","Orange","Tropical"]},
   {id:"natures-nectar-12", name:"Nature's Nectar 12pk", p:2496, rpp:8, c:12, spec:"250ml // 12-Pack", category:"Juice / Sparkling",
    flavors:["Grapefruit","Blackberry","Clementine"]},
-  {id:"bellevie-24", name:"Belle Vie 24pk", p:2400, rpp:10, c:24, spec:"12 oz 202 // 24-Pack", category:"Sparkling Water",
+  {id:"bellevie-24", name:"Belle Vie 24pk", p:2400, rpp:10, c:12, spec:"12 oz 202 // 24-Pack", category:"Sparkling Water",
    flavors:["Pure","Lime","Strawberry","Blackberry","Lemon","Grapefruit"]},
   {id:"popz-tea", name:"Popz Tea 12pk", p:2496, rpp:8, c:12, spec:"12 oz Sleek // 12-Pack", category:"Iced Tea",
    flavors:["Half and Half","Raspberry","Sweet Tea","Peach"]},
@@ -1560,6 +1563,8 @@ updCount=function(){
     const b=cntBrand(), t=cansFor(b,b.c,cnt.P,cnt.R,cnt.C,cnt.U);
     const cases=(t/b.c), pallets=(t/b.p);
     $("cDetail").textContent=cnt.P+"P + "+cnt.R+"R + "+cnt.C+"C + "+cnt.U+"U loose · "+b.spec+" · ≈"+cases.toFixed(1)+" cases · "+pallets.toFixed(2)+" pallets";
+    const wholeCases=Math.floor(t/b.c), looseRem=t%b.c;
+    $("cCases").textContent = looseRem===0 ? fmt(wholeCases)+" cases" : fmt(wholeCases)+" cases + "+fmt(looseRem)+" cans";
   }catch(e){}
 };
 
